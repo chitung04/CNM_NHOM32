@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /CNM_NHOM32/
+
+# Chuyển hướng tất cả requests đến index.php (trừ files tĩnh)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Bảo vệ các file nhạy cảm
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

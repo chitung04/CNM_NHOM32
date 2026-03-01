@@ -1,0 +1,17 @@
+# Environment file
+.env
+
+# Uploaded files
+uploads/backups/*.sql
+assets/qrcodes/*.png
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

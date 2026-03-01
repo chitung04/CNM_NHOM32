@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Scanner - Pharmacy Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #764ba2;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result h3 {
+            margin-bottom: 15px;
+        }
+        
+        .result-data {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .result-data p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        
+        .result-data strong {
+            display: inline-block;
+            width: 150px;
+        }
+        
+        .test-codes {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .test-codes h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .code-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: 2px solid #e9ecef;
+        }
+        
+        .code-item:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .code-item code {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test QR Scanner</h1>
+        <p class="subtitle">Kiểm tra chức năng scan QR code</p>
+        
+        <div class="input-group">
+            <label for="qrCode">Nhập mã QR Code:</label>
+            <input type="text" id="qrCode" placeholder="Ví dụ: MED_1234567890_5678">
+        </div>
+        
+        <button class="btn" onclick="scanQR()">Scan QR Code</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Đang xử lý...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="test-codes">
+            <h3>📋 Mã QR test có sẵn:</h3>
+            <p style="color: #666; margin-bottom: 15px;">Click vào mã để test nhanh</p>
+            
+            <div class="code-item" onclick="testCode('MED_TEST_001')">
+                <strong>Medicine Test:</strong> <code>MED_TEST_001</code>
+            </div>
+            
+            <div class="code-item" onclick="testCode('BATCH_TEST_001')">
+                <strong>Batch Test:</strong> <code>BATCH_TEST_001</code>
+            </div>
+            
+            <div class="code-item" onclick="testCode('INV_TEST_001')">
+                <strong>Invoice Test:</strong> <code>INV_TEST_001</code>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Get QR code from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const qrFromUrl = urlParams.get('qr');
+        if (qrFromUrl) {
+            document.getElementById('qrCode').value = qrFromUrl;
+            // Auto scan after page load
+            setTimeout(() => scanQR(), 500);
+        }
+        
+        function testCode(code) {
+            document.getElementById('qrCode').value = code;
+            scanQR();
+        }
+        
+        function scanQR() {
+            const qrCode = document.getElementById('qrCode').value.trim();
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!qrCode) {
+                showResult('error', 'Vui lòng nhập mã QR code');
+                return;
+            }
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            // Call AJAX endpoint (public version for testing)
+            $.ajax({
+                url: '../ajax/get_medicine_by_qr_public.php',
+                method: 'POST',
+                data: { qr_code: qrCode },
+                dataType: 'json',
+                success: function(response) {
+                    loadingDiv.style.display = 'none';
+                    
+                    if (response.success) {
+                        const medicine = response.medicine;
+                        let html = '<h3>✅ Tìm thấy thuốc!</h3>';
+                        html += '<div class="result-data">';
+                        html += '<p><strong>Mã thuốc:</strong> ' + medicine.medicine_id + '</p>';
+                        html += '<p><strong>Tên thuốc:</strong> ' + medicine.medicine_name + '</p>';
+                        html += '<p><strong>Danh mục:</strong> ' + (medicine.category_name || 'N/A') + '</p>';
+                        html += '<p><strong>Đơn vị:</strong> ' + (medicine.unit_name || 'N/A') + '</p>';
+                        html += '<p><strong>Giá:</strong> ' + formatMoney(medicine.price) + ' VNĐ</p>';
+                        html += '<p><strong>Tồn kho:</strong> ' + (medicine.total_inventory || 0) + '</p>';
+                        if (medicine.description) {
+                            html += '<p><strong>Mô tả:</strong> ' + medicine.description + '</p>';
+                        }
+                        html += '</div>';
+                        showResult('success', html);
+                    } else {
+                        showResult('error', '❌ ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    loadingDiv.style.display = 'none';
+                    showResult('error', '❌ Lỗi kết nối: ' + error);
+                }
+            });
+        }
+        
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+        
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount);
+        }
+        
+        // Allow Enter key to scan
+        document.getElementById('qrCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                scanQR();
+            }
+        });
+    </script>
+</body>
+</html>
