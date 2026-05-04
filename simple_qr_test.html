@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code Đơn Giản</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .qr-box { border: 2px solid #007bff; padding: 20px; text-align: center; margin: 20px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h2>🧪 Test QR Code Đơn Giản</h2>
+    
+    <div class="qr-box">
+        <h3>📱 QR Code Test 1 - Trang Google</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://www.google.com" alt="QR Google">
+        <p>Quét QR này sẽ mở Google.com</p>
+    </div>
+    
+    <div class="qr-box">
+        <h3>📱 QR Code Test 2 - Trang web local</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost/CNM_NHOM32/simple_qr_test.html" alt="QR Local">
+        <p>Quét QR này sẽ mở lại trang này</p>
+    </div>
+    
+    <div class="qr-box">
+        <h3>📱 QR Code Test 3 - Trang thuốc</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost/CNM_NHOM32/medicine_info.php?qr=BATCH_1735000101_2001" alt="QR Medicine">
+        <p>Quét QR này sẽ mở thông tin thuốc</p>
+    </div>
+    
+    <h3>🔍 Hướng dẫn test:</h3>
+    <ol>
+        <li><strong>Test 1:</strong> Quét QR đầu tiên, nếu mở được Google thì điện thoại OK</li>
+        <li><strong>Test 2:</strong> Quét QR thứ 2, nếu mở được trang này thì localhost OK</li>
+        <li><strong>Test 3:</strong> Quét QR thứ 3, nếu không mở được thì có lỗi ở medicine_info.php</li>
+    </ol>
+    
+    <h3>⚠️ Lưu ý:</h3>
+    <ul>
+        <li>Điện thoại và máy tính phải cùng mạng WiFi</li>
+        <li>XAMPP Apache phải đang chạy</li>
+        <li>URL phải là <code>http://localhost/CNM_NHOM32</code></li>
+    </ul>
+    
+    <hr>
+    <p><a href="index.php">🏠 Về trang chủ</a></p>
+    
+    <script>
+        // Hiển thị thông tin debug
+        document.addEventListener('DOMContentLoaded', function() {
+            const debugInfo = document.createElement('div');
+            debugInfo.innerHTML = `
+                <h3>🔧 Thông tin debug:</h3>
+                <p><strong>URL hiện tại:</strong> ${window.location.href}</p>
+                <p><strong>Host:</strong> ${window.location.host}</p>
+                <p><strong>Protocol:</strong> ${window.location.protocol}</p>
+            `;
+            document.body.appendChild(debugInfo);
+        });
+    </script>
+</body>
+</html>

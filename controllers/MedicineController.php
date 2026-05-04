@@ -2,6 +2,7 @@
 require_once 'models/Medicine.php';
 require_once 'models/Category.php';
 require_once 'models/Unit.php';
+require_once 'helpers/audit.php';
 
 class MedicineController {
     private $medicineModel;
@@ -61,6 +62,9 @@ class MedicineController {
             $id = $this->medicineModel->create($data);
             
             if ($id) {
+                // GHI LOG TẠO THUỐC MỚI
+                auditCreate('medicines', $id, $data);
+                
                 $_SESSION['success'] = "Thêm thuốc thành công";
                 header('Location: index.php?page=medicines');
             } else {
@@ -106,6 +110,9 @@ class MedicineController {
         $id = $_POST['medicine_id'] ?? 0;
         
         try {
+            // Lấy dữ liệu cũ để ghi log
+            $oldData = $this->medicineModel->getById($id);
+            
             $data = [
                 'medicine_name' => trim($_POST['medicine_name'] ?? ''),
                 'category_id' => $_POST['category_id'] ?? null,
@@ -117,6 +124,12 @@ class MedicineController {
             $result = $this->medicineModel->update($id, $data);
             
             if ($result) {
+                // GHI LOG CẬP NHẬT THUỐC
+                auditUpdate('medicines', $id, $oldData, $data);
+                
+                // Cập nhật lại QR code với thông tin mới
+                $this->medicineModel->updateQRCode($id);
+                
                 $_SESSION['success'] = "Cập nhật thuốc thành công";
             } else {
                 $_SESSION['error'] = "Có lỗi xảy ra khi cập nhật thuốc";
@@ -141,6 +154,9 @@ class MedicineController {
             header('Location: index.php?page=medicines');
             exit;
         }
+        
+        // GHI LOG XEM CHI TIẾT THUỐC
+        auditView('medicines', $id);
         
         // Lấy tồn kho
         $inventory = $this->medicineModel->getTotalInventory($id);
@@ -168,10 +184,16 @@ class MedicineController {
         $id = $_GET['id'] ?? 0;
         
         try {
+            // Lấy dữ liệu trước khi xóa để ghi log
+            $medicineData = $this->medicineModel->getById($id);
+            
             $result = $this->medicineModel->delete($id);
             
             if ($result) {
-                $_SESSION['success'] = "Xóa thuốc thành công";
+                // GHI LOG XÓA THUỐC
+                auditDelete('medicines', $id, $medicineData);
+                
+                $_SESSION['success'] = "Xóa thuốc thành công (thuốc đã được ẩn để giữ lịch sử giao dịch)";
             } else {
                 $_SESSION['error'] = "Có lỗi xảy ra khi xóa thuốc";
             }
@@ -181,5 +203,20 @@ class MedicineController {
         
         header('Location: index.php?page=medicines');
         exit;
+    }
+    
+    /**
+     * Trang quản lý QR codes
+     */
+    public function qrCodes() {
+        $medicines = $this->medicineModel->getAll();
+        
+        // Lấy tồn kho cho mỗi thuốc
+        foreach ($medicines as &$medicine) {
+            $medicine['inventory'] = $this->medicineModel->getTotalInventory($medicine['medicine_id']);
+        }
+        
+        $pageTitle = "Quản lý mã QR thuốc";
+        require_once 'views/medicines/qr_codes.php';
     }
 }

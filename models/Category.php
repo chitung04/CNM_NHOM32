@@ -9,14 +9,20 @@ class Category {
     }
     
     public function getAll() {
-        $sql = "SELECT * FROM categories ORDER BY category_name ASC";
-        $stmt = $this->db->query($sql);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM categories WHERE pharmacy_id = ? ORDER BY category_name ASC";
+        $stmt = $this->db->query($sql, [$pharmacyId]);
         return $stmt->fetchAll();
     }
     
     public function getById($id) {
-        $sql = "SELECT * FROM categories WHERE category_id = ?";
-        $stmt = $this->db->query($sql, [$id]);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM categories WHERE category_id = ? AND pharmacy_id = ?";
+        $stmt = $this->db->query($sql, [$id, $pharmacyId]);
         return $stmt->fetch();
     }
 }

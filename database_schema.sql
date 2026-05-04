@@ -14,6 +14,7 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) COMMENT 'Số điện thoại',
     role ENUM('staff', 'manager') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL,
@@ -55,8 +56,10 @@ CREATE TABLE medicines (
     price DECIMAL(10,2) NOT NULL,
     description TEXT,
     qr_code VARCHAR(50) UNIQUE,
+    status ENUM('active', 'inactive') DEFAULT 'active' COMMENT 'Trạng thái thuốc (active/inactive)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL,
+    deleted_at DATETIME DEFAULT NULL COMMENT 'Thời gian xóa mềm',
     FOREIGN KEY (category_id) REFERENCES categories(category_id),
     FOREIGN KEY (unit_id) REFERENCES units(unit_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
@@ -66,9 +69,11 @@ CREATE TABLE batches (
     batch_id INT PRIMARY KEY AUTO_INCREMENT,
     medicine_id INT NOT NULL,
     supplier_id INT,
+    batch_number VARCHAR(50) NOT NULL COMMENT 'Số lô thuốc',
     quantity INT NOT NULL,
     expiry_date DATE NOT NULL,
     import_date DATE NOT NULL,
+    import_price DECIMAL(10,2) DEFAULT 0 COMMENT 'Giá nhập',
     qr_code VARCHAR(50) UNIQUE,
     status ENUM('active', 'expired', 'sold_out') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -84,6 +89,9 @@ CREATE TABLE invoices (
     total_amount DECIMAL(10,2) NOT NULL,
     discount DECIMAL(10,2) DEFAULT 0,
     final_amount DECIMAL(10,2) NOT NULL,
+    payment_method ENUM('cash', 'bank_transfer') DEFAULT 'cash' COMMENT 'Hình thức thanh toán',
+    amount_paid DECIMAL(10,2) DEFAULT 0 COMMENT 'Số tiền khách thanh toán',
+    bank_qr_code VARCHAR(255) DEFAULT NULL COMMENT 'Mã QR ngân hàng',
     qr_code VARCHAR(50) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -118,12 +126,11 @@ CREATE TABLE notifications (
 -- ============================================
 -- USERS
 -- ============================================
--- Password: admin123 và staff123
-INSERT INTO users (username, password, full_name, role) VALUES
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Quản trị viên', 'manager'),
-('staff', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Nhân viên bán hàng', 'staff'),
-('manager1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Nguyễn Văn A', 'manager'),
-('staff1', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Trần Thị B', 'staff');
+-- Password: 123456 cho tất cả users
+INSERT INTO users (username, password, full_name, phone, role) VALUES
+('admin', '$2y$10$N9qo8uLOickgx2ZMRZoMye.IjdOcjne/Sj.r3OWzVudKQCAGqtzTi', 'Quản lý', '0123456789', 'manager'),
+('nhanvien1', '$2y$10$N9qo8uLOickgx2ZMRZoMye.IjdOcjne/Sj.r3OWzVudKQCAGqtzTi', 'Nhân viên 1', '0987654321', 'staff'),
+('nhanvien2', '$2y$10$N9qo8uLOickgx2ZMRZoMye.IjdOcjne/Sj.r3OWzVudKQCAGqtzTi', 'Nhân viên 2', '0912345678', 'staff');
 
 -- ============================================
 -- CATEGORIES (Phân loại theo quy định dược phẩm VN)
@@ -266,90 +273,90 @@ INSERT INTO medicines (medicine_name, category_id, unit_id, price, description, 
 -- ============================================
 -- BATCHES với QR CODES
 -- ============================================
-INSERT INTO batches (medicine_id, supplier_id, quantity, expiry_date, import_date, qr_code, status) VALUES
+INSERT INTO batches (medicine_id, supplier_id, batch_number, quantity, expiry_date, import_date, import_price, qr_code, status) VALUES
 -- Batches cho thuốc kê đơn
-(1, 1, 500, '2025-12-31', '2024-01-15', 'BATCH_1735000101_2001', 'active'),
-(2, 1, 200, '2025-11-30', '2024-02-01', 'BATCH_1735000102_2002', 'active'),
-(3, 2, 150, '2026-03-31', '2024-03-15', 'BATCH_1735000103_2003', 'active'),
-(4, 1, 400, '2025-10-31', '2024-01-20', 'BATCH_1735000104_2004', 'active'),
-(5, 1, 300, '2026-01-31', '2024-02-10', 'BATCH_1735000105_2005', 'active'),
-(6, 2, 250, '2026-06-30', '2024-07-01', 'BATCH_1735000106_2006', 'active'),
-(7, 2, 400, '2026-05-31', '2024-06-01', 'BATCH_1735000107_2007', 'active'),
-(8, 2, 350, '2026-07-31', '2024-08-01', 'BATCH_1735000108_2008', 'active'),
-(9, 3, 600, '2026-04-30', '2024-05-01', 'BATCH_1735000109_2009', 'active'),
-(10, 3, 400, '2026-03-31', '2024-04-01', 'BATCH_1735000110_2010', 'active'),
+(1, 1, 'LOT000001', 500, '2025-12-31', '2024-01-15', 25000, 'BATCH_1735000101_2001', 'active'),
+(2, 1, 'LOT000002', 200, '2025-11-30', '2024-02-01', 45000, 'BATCH_1735000102_2002', 'active'),
+(3, 2, 'LOT000003', 150, '2026-03-31', '2024-03-15', 65000, 'BATCH_1735000103_2003', 'active'),
+(4, 1, 'LOT000004', 400, '2025-10-31', '2024-01-20', 35000, 'BATCH_1735000104_2004', 'active'),
+(5, 1, 'LOT000005', 300, '2026-01-31', '2024-02-10', 15000, 'BATCH_1735000105_2005', 'active'),
+(6, 2, 'LOT000006', 250, '2026-06-30', '2024-07-01', 55000, 'BATCH_1735000106_2006', 'active'),
+(7, 2, 'LOT000007', 400, '2026-05-31', '2024-06-01', 42000, 'BATCH_1735000107_2007', 'active'),
+(8, 2, 'LOT000008', 350, '2026-07-31', '2024-08-01', 58000, 'BATCH_1735000108_2008', 'active'),
+(9, 3, 'LOT000009', 600, '2026-04-30', '2024-05-01', 18000, 'BATCH_1735000109_2009', 'active'),
+(10, 3, 'LOT000010', 400, '2026-03-31', '2024-04-01', 32000, 'BATCH_1735000110_2010', 'active'),
 
 -- Batches cho thuốc OTC
-(11, 3, 1000, '2026-12-31', '2024-01-10', 'BATCH_1735000111_2011', 'active'),
-(11, 3, 800, '2025-08-31', '2023-08-15', 'BATCH_1735000112_2012', 'active'),
-(12, 2, 600, '2026-05-31', '2024-05-01', 'BATCH_1735000113_2013', 'active'),
-(13, 1, 500, '2025-09-30', '2024-01-05', 'BATCH_1735000114_2014', 'active'),
-(14, 2, 700, '2026-08-31', '2024-09-01', 'BATCH_1735000115_2015', 'active'),
-(15, 2, 650, '2026-07-31', '2024-08-01', 'BATCH_1735000116_2016', 'active'),
-(16, 2, 800, '2026-06-30', '2024-07-01', 'BATCH_1735000117_2017', 'active'),
-(17, 3, 550, '2025-11-30', '2024-02-01', 'BATCH_1735000118_2018', 'active'),
-(18, 3, 450, '2025-10-31', '2024-01-10', 'BATCH_1735000119_2019', 'active'),
+(11, 3, 'LOT000011', 1000, '2026-12-31', '2024-01-10', 12000, 'BATCH_1735000111_2011', 'active'),
+(11, 3, 'LOT000012', 800, '2025-08-31', '2023-08-15', 11000, 'BATCH_1735000112_2012', 'active'),
+(12, 2, 'LOT000013', 600, '2026-05-31', '2024-05-01', 28000, 'BATCH_1735000113_2013', 'active'),
+(13, 1, 'LOT000014', 500, '2025-09-30', '2024-01-05', 18000, 'BATCH_1735000114_2014', 'active'),
+(14, 2, 'LOT000015', 700, '2026-08-31', '2024-09-01', 22000, 'BATCH_1735000115_2015', 'active'),
+(15, 2, 'LOT000016', 650, '2026-07-31', '2024-08-01', 25000, 'BATCH_1735000116_2016', 'active'),
+(16, 2, 'LOT000017', 800, '2026-06-30', '2024-07-01', 15000, 'BATCH_1735000117_2017', 'active'),
+(17, 3, 'LOT000018', 550, '2025-11-30', '2024-02-01', 18000, 'BATCH_1735000118_2018', 'active'),
+(18, 3, 'LOT000019', 450, '2025-10-31', '2024-01-10', 22000, 'BATCH_1735000119_2019', 'active'),
 
 -- Batches cho dược phẩm
-(19, 2, 450, '2025-12-31', '2024-01-10', 'BATCH_1735000120_2020', 'active'),
-(20, 2, 250, '2026-01-31', '2024-02-01', 'BATCH_1735000121_2021', 'active'),
-(21, 2, 300, '2026-07-31', '2024-07-10', 'BATCH_1735000122_2022', 'active'),
-(22, 2, 280, '2026-06-30', '2024-06-15', 'BATCH_1735000123_2023', 'active'),
-(23, 5, 80, '2026-12-31', '2024-01-15', 'BATCH_1735000124_2024', 'active'),
-(24, 3, 600, '2025-10-31', '2024-01-10', 'BATCH_1735000125_2025', 'active'),
-(25, 3, 550, '2025-09-30', '2024-01-05', 'BATCH_1735000126_2026', 'active'),
+(19, 2, 'LOT000020', 450, '2025-12-31', '2024-01-10', 28000, 'BATCH_1735000120_2020', 'active'),
+(20, 2, 'LOT000021', 250, '2026-01-31', '2024-02-01', 52000, 'BATCH_1735000121_2021', 'active'),
+(21, 2, 'LOT000022', 300, '2026-07-31', '2024-07-10', 35000, 'BATCH_1735000122_2022', 'active'),
+(22, 2, 'LOT000023', 280, '2026-06-30', '2024-06-15', 38000, 'BATCH_1735000123_2023', 'active'),
+(23, 5, 'LOT000024', 80, '2026-12-31', '2024-01-15', 280000, 'BATCH_1735000124_2024', 'active'),
+(24, 3, 'LOT000025', 600, '2025-10-31', '2024-01-10', 22000, 'BATCH_1735000125_2025', 'active'),
+(25, 3, 'LOT000026', 550, '2025-09-30', '2024-01-05', 25000, 'BATCH_1735000126_2026', 'active'),
 
 -- Batches cho TPCN
-(26, 4, 800, '2026-12-31', '2024-01-01', 'BATCH_1735000127_2027', 'active'),
-(27, 4, 400, '2026-11-30', '2024-02-01', 'BATCH_1735000128_2028', 'active'),
-(28, 4, 350, '2026-10-31', '2024-03-01', 'BATCH_1735000129_2029', 'active'),
-(29, 5, 200, '2026-09-30', '2024-04-01', 'BATCH_1735000130_2030', 'active'),
-(30, 4, 600, '2026-08-31', '2024-02-15', 'BATCH_1735000131_2031', 'active'),
-(31, 4, 300, '2026-07-31', '2024-03-10', 'BATCH_1735000132_2032', 'active'),
-(32, 4, 250, '2026-06-30', '2024-04-05', 'BATCH_1735000133_2033', 'active'),
-(33, 4, 280, '2026-05-31', '2024-05-01', 'BATCH_1735000134_2034', 'active'),
-(34, 4, 400, '2026-04-30', '2024-06-01', 'BATCH_1735000135_2035', 'active'),
-(35, 4, 350, '2026-03-31', '2024-07-01', 'BATCH_1735000136_2036', 'active'),
+(26, 4, 'LOT000027', 800, '2026-12-31', '2024-01-01', 32000, 'BATCH_1735000127_2027', 'active'),
+(27, 4, 'LOT000028', 400, '2026-11-30', '2024-02-01', 48000, 'BATCH_1735000128_2028', 'active'),
+(28, 4, 'LOT000029', 350, '2026-10-31', '2024-03-01', 75000, 'BATCH_1735000129_2029', 'active'),
+(29, 5, 'LOT000030', 200, '2026-09-30', '2024-04-01', 155000, 'BATCH_1735000130_2030', 'active'),
+(30, 4, 'LOT000031', 600, '2026-08-31', '2024-02-15', 95000, 'BATCH_1735000131_2031', 'active'),
+(31, 4, 'LOT000032', 300, '2026-07-31', '2024-03-10', 115000, 'BATCH_1735000132_2032', 'active'),
+(32, 4, 'LOT000033', 250, '2026-06-30', '2024-04-05', 225000, 'BATCH_1735000133_2033', 'active'),
+(33, 4, 'LOT000034', 280, '2026-05-31', '2024-05-01', 135000, 'BATCH_1735000134_2034', 'active'),
+(34, 4, 'LOT000035', 400, '2026-04-30', '2024-06-01', 95000, 'BATCH_1735000135_2035', 'active'),
+(35, 4, 'LOT000036', 350, '2026-03-31', '2024-07-01', 175000, 'BATCH_1735000136_2036', 'active'),
 
 -- Batches cho dược mỹ phẩm
-(36, 2, 150, '2026-04-30', '2024-05-01', 'BATCH_1735000137_2037', 'active'),
-(37, 2, 200, '2026-03-31', '2024-04-01', 'BATCH_1735000138_2038', 'active'),
-(38, 2, 100, '2026-02-28', '2024-03-01', 'BATCH_1735000139_2039', 'active'),
-(39, 2, 120, '2026-01-31', '2024-02-01', 'BATCH_1735000140_2040', 'active'),
-(40, 2, 90, '2025-12-31', '2024-01-01', 'BATCH_1735000141_2041', 'active'),
-(41, 2, 150, '2025-11-30', '2023-12-01', 'BATCH_1735000142_2042', 'active'),
+(36, 2, 'LOT000037', 150, '2026-04-30', '2024-05-01', 95000, 'BATCH_1735000137_2037', 'active'),
+(37, 2, 'LOT000038', 200, '2026-03-31', '2024-04-01', 75000, 'BATCH_1735000138_2038', 'active'),
+(38, 2, 'LOT000039', 100, '2026-02-28', '2024-03-01', 115000, 'BATCH_1735000139_2039', 'active'),
+(39, 2, 'LOT000040', 120, '2026-01-31', '2024-02-01', 155000, 'BATCH_1735000140_2040', 'active'),
+(40, 2, 'LOT000041', 90, '2025-12-31', '2024-01-01', 205000, 'BATCH_1735000141_2041', 'active'),
+(41, 2, 'LOT000042', 150, '2025-11-30', '2023-12-01', 115000, 'BATCH_1735000142_2042', 'active'),
 
 -- Batches cho thiết bị y tế
-(42, 5, 500, '2027-12-31', '2024-01-01', 'BATCH_1735000143_2043', 'active'),
-(43, 5, 300, '2027-11-30', '2024-02-01', 'BATCH_1735000144_2044', 'active'),
-(44, 5, 1000, '2027-10-31', '2024-03-01', 'BATCH_1735000145_2045', 'active'),
-(45, 5, 200, '2028-12-31', '2024-01-15', 'BATCH_1735000146_2046', 'active'),
-(46, 5, 50, '2029-12-31', '2024-02-01', 'BATCH_1735000147_2047', 'active'),
-(47, 5, 100, '2027-06-30', '2024-01-10', 'BATCH_1735000148_2048', 'active'),
+(42, 5, 'LOT000043', 500, '2027-12-31', '2024-01-01', 32000, 'BATCH_1735000143_2043', 'active'),
+(43, 5, 'LOT000044', 300, '2027-11-30', '2024-02-01', 52000, 'BATCH_1735000144_2044', 'active'),
+(44, 5, 'LOT000045', 1000, '2027-10-31', '2024-03-01', 95000, 'BATCH_1735000145_2045', 'active'),
+(45, 5, 'LOT000046', 200, '2028-12-31', '2024-01-15', 525000, 'BATCH_1735000146_2046', 'active'),
+(46, 5, 'LOT000047', 50, '2029-12-31', '2024-02-01', 2800000, 'BATCH_1735000147_2047', 'active'),
+(47, 5, 'LOT000048', 100, '2027-06-30', '2024-01-10', 750000, 'BATCH_1735000148_2048', 'active'),
 
 -- Batches cho kháng sinh khác
-(48, 1, 350, '2026-02-28', '2024-03-01', 'BATCH_1735000149_2049', 'active'),
-(49, 1, 280, '2026-01-31', '2024-02-15', 'BATCH_1735000150_2050', 'active'),
-(50, 1, 300, '2025-12-31', '2024-01-20', 'BATCH_1735000151_2051', 'active'),
+(48, 1, 'LOT000049', 350, '2026-02-28', '2024-03-01', 35000, 'BATCH_1735000149_2049', 'active'),
+(49, 1, 'LOT000050', 280, '2026-01-31', '2024-02-15', 48000, 'BATCH_1735000150_2050', 'active'),
+(50, 1, 'LOT000051', 300, '2025-12-31', '2024-01-20', 75000, 'BATCH_1735000151_2051', 'active'),
 
 -- Batches cho giảm đau khác
-(51, 3, 900, '2026-11-30', '2024-02-01', 'BATCH_1735000152_2052', 'active'),
-(52, 3, 700, '2026-10-31', '2024-03-01', 'BATCH_1735000153_2053', 'active'),
+(51, 3, 'LOT000052', 900, '2026-11-30', '2024-02-01', 15000, 'BATCH_1735000152_2052', 'active'),
+(52, 3, 'LOT000053', 700, '2026-10-31', '2024-03-01', 18000, 'BATCH_1735000153_2053', 'active'),
 
 -- Batches cho tiêu hóa khác
-(53, 3, 500, '2025-07-31', '2024-01-20', 'BATCH_1735000154_2054', 'active'),
-(54, 3, 700, '2025-11-30', '2024-02-01', 'BATCH_1735000155_2055', 'active'),
-(55, 3, 400, '2026-05-31', '2024-06-01', 'BATCH_1735000156_2056', 'active'),
+(53, 3, 'LOT000054', 500, '2025-07-31', '2024-01-20', 38000, 'BATCH_1735000154_2054', 'active'),
+(54, 3, 'LOT000055', 700, '2025-11-30', '2024-02-01', 22000, 'BATCH_1735000155_2055', 'active'),
+(55, 3, 'LOT000056', 400, '2026-05-31', '2024-06-01', 28000, 'BATCH_1735000156_2056', 'active'),
 
 -- Batches cho mắt tai mũi họng
-(56, 5, 150, '2026-08-31', '2024-09-01', 'BATCH_1735000157_2057', 'active'),
-(57, 5, 120, '2026-07-31', '2024-08-01', 'BATCH_1735000158_2058', 'active'),
-(58, 5, 200, '2026-06-30', '2024-07-01', 'BATCH_1735000159_2059', 'active'),
-(59, 5, 300, '2026-05-31', '2024-06-01', 'BATCH_1735000160_2060', 'active'),
+(56, 5, 'LOT000057', 150, '2026-08-31', '2024-09-01', 225000, 'BATCH_1735000157_2057', 'active'),
+(57, 5, 'LOT000058', 120, '2026-07-31', '2024-08-01', 185000, 'BATCH_1735000158_2058', 'active'),
+(58, 5, 'LOT000059', 200, '2026-06-30', '2024-07-01', 265000, 'BATCH_1735000159_2059', 'active'),
+(59, 5, 'LOT000060', 300, '2026-05-31', '2024-06-01', 155000, 'BATCH_1735000160_2060', 'active'),
 
 -- Batches cho cơ xương khớp
-(60, 2, 250, '2026-04-30', '2024-05-01', 'BATCH_1735000161_2061', 'active'),
-(61, 2, 280, '2026-03-31', '2024-04-01', 'BATCH_1735000162_2062', 'active');
+(60, 2, 'LOT000061', 250, '2026-04-30', '2024-05-01', 115000, 'BATCH_1735000161_2061', 'active'),
+(61, 2, 'LOT000062', 280, '2026-03-31', '2024-04-01', 135000, 'BATCH_1735000162_2062', 'active');
 
 -- ============================================
 -- INVOICES với QR CODES
@@ -398,6 +405,7 @@ INSERT INTO notifications (type, message, reference_id, is_read) VALUES
 -- Index cho batches table (tối ưu getTotalInventory)
 ALTER TABLE batches ADD INDEX idx_medicine_status (medicine_id, status);
 ALTER TABLE batches ADD INDEX idx_expiry_date (expiry_date);
+ALTER TABLE batches ADD INDEX idx_batch_number (batch_number);
 
 -- Index cho invoices table
 ALTER TABLE invoices ADD INDEX idx_created_at (created_at);
@@ -411,6 +419,7 @@ ALTER TABLE invoice_details ADD INDEX idx_batch_id (batch_id);
 -- Index cho medicines table
 ALTER TABLE medicines ADD INDEX idx_category_id (category_id);
 ALTER TABLE medicines ADD INDEX idx_medicine_name (medicine_name);
+ALTER TABLE medicines ADD INDEX idx_status (status);
 
 -- Index cho users table
 ALTER TABLE users ADD INDEX idx_role (role);
@@ -514,3 +523,29 @@ FROM categories c
 LEFT JOIN medicines m ON c.category_id = m.category_id
 GROUP BY c.category_id, c.category_name
 ORDER BY COUNT(m.medicine_id) DESC;
+
+-- ============================================
+-- CẬP NHẬT DATABASE HIỆN TẠI
+-- ============================================
+SELECT '========================================' AS '';
+SELECT 'CẬP NHẬT DATABASE HIỆN TẠI' AS '';
+SELECT '========================================' AS '';
+
+-- Cập nhật tên admin từ "Quản lý chính" thành "Quản lý"
+UPDATE users SET full_name = 'Quản lý' WHERE username = 'admin' AND full_name = 'Quản lý chính';
+
+-- Cập nhật payment_method = NULL cho các đơn hàng chưa thanh toán
+UPDATE invoices SET payment_method = NULL WHERE payment_method = 'cash' AND amount_paid = 0;
+
+-- Cập nhật tên hệ thống trong các bảng nếu cần
+-- (Có thể thêm các cập nhật khác ở đây)
+
+-- Kiểm tra kết quả cập nhật
+SELECT 'Thông tin admin sau cập nhật:' AS '';
+SELECT username, full_name, role FROM users WHERE username = 'admin';
+
+SELECT 'Đơn hàng chưa thanh toán:' AS '';
+SELECT COUNT(*) AS 'Số đơn chưa thanh toán' FROM invoices WHERE payment_method IS NULL;
+
+SELECT 'Cập nhật hoàn tất!' AS 'Status';
+SELECT 'Vui lòng đăng xuất và đăng nhập lại để thấy thay đổi!' AS 'Lưu ý';

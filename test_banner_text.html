@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Banner Text Position</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body { margin: 0; padding: 0; }
+        .test-container { 
+            margin-top: 100px; 
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .debug-info {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Notification Banner -->
+    <div id="notification-banner" class="notification-banner show">
+        <div class="notification-banner-wrapper">
+            <div id="notification-banner-content" class="notification-banner-content">
+                <div class="notification-item low-stock">
+                    <span class="icon">⚠️</span>
+                    <span class="message">Test notification text - should be at bottom edge</span>
+                </div>
+                <div class="notification-item expiry-warning">
+                    <span class="icon">⏰</span>
+                    <span class="message">Another test message for positioning</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <div class="debug-info">
+            <h3>Debug Information</h3>
+            <p>Banner height: 60px</p>
+            <p>Text should be positioned at the very bottom of the orange banner above</p>
+            <p>If you can see the full text clearly, the positioning is correct</p>
+        </div>
+        
+        <script>
+            // Stop animation for easier testing
+            document.getElementById('notification-banner-content').style.animation = 'none';
+            document.getElementById('notification-banner-content').style.transform = 'translateX(0)';
+        </script>
+    </div>
+</body>
+</html>

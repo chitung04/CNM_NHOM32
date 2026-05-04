@@ -66,6 +66,33 @@ class ReportController {
     }
     
     /**
+     * Báo cáo thuốc sắp hết hàng
+     */
+    public function lowStock() {
+        $threshold = $_GET['threshold'] ?? LOW_STOCK_THRESHOLD;
+        $medicines = $this->medicineModel->getAll();
+        
+        // Lọc thuốc có tồn kho thấp
+        $lowStockMedicines = [];
+        foreach ($medicines as $medicine) {
+            $inventory = $this->medicineModel->getTotalInventory($medicine['medicine_id']);
+            if ($inventory <= $threshold) {
+                $medicine['inventory'] = $inventory;
+                $medicine['batches'] = $this->batchModel->getByMedicine($medicine['medicine_id']);
+                $lowStockMedicines[] = $medicine;
+            }
+        }
+        
+        // Sắp xếp theo tồn kho tăng dần (ít nhất lên đầu)
+        usort($lowStockMedicines, function($a, $b) {
+            return $a['inventory'] - $b['inventory'];
+        });
+        
+        $pageTitle = "Thuốc sắp hết hàng";
+        require_once 'views/reports/low_stock.php';
+    }
+    
+    /**
      * Thống kê thuốc bán chạy
      */
     public function topSelling() {

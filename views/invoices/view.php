@@ -29,7 +29,7 @@
                     </tr>
                     <tr>
                         <td><strong>Ngày tạo:</strong></td>
-                        <td><?php echo date('d/m/Y H:i', strtotime($invoice['created_at'])); ?></td>
+                        <td><?php echo $invoice['created_at'] ? date('d/m/Y H:i', strtotime($invoice['created_at'])) : '-'; ?></td>
                     </tr>
                     <tr>
                         <td><strong>Tổng tiền:</strong></td>
@@ -50,14 +50,53 @@
     
     <div class="col-md-6">
         <div class="card mb-3">
-            <div class="card-header"><h5 class="mb-0">Mã QR</h5></div>
-            <div class="card-body text-center">
-                <?php if (!empty($invoice['qr_code'])): ?>
-                    <img src="assets/qrcodes/<?php echo htmlspecialchars($invoice['qr_code']); ?>.png" 
-                         alt="QR Code" class="img-fluid" style="max-width: 200px;">
-                <?php else: ?>
-                    <p class="text-muted">Không có mã QR</p>
-                <?php endif; ?>
+            <div class="card-header"><h5 class="mb-0">Thông tin thanh toán</h5></div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td width="40%"><strong>Hình thức:</strong></td>
+                        <td>
+                            <?php 
+                            if (!empty($invoice['payment_method'])) {
+                                if ($invoice['payment_method'] === 'cash') {
+                                    echo '<span class="badge bg-success"><i class="bi bi-cash"></i> Tiền mặt</span>';
+                                } else {
+                                    echo '<span class="badge bg-primary"><i class="bi bi-credit-card"></i> Chuyển khoản</span>';
+                                }
+                            } else {
+                                echo '<span class="badge bg-secondary">Chưa thanh toán</span>';
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                    <?php if (!empty($invoice['payment_method'])): ?>
+                        <tr>
+                            <td><strong>Số tiền thanh toán:</strong></td>
+                            <td><?php echo number_format($invoice['amount_paid'] ?? 0); ?>đ</td>
+                        </tr>
+                        <?php if ($invoice['payment_method'] === 'cash'): ?>
+                            <?php 
+                            $change = ($invoice['amount_paid'] ?? 0) - $invoice['final_amount'];
+                            ?>
+                            <tr>
+                                <td><strong>Tiền thừa:</strong></td>
+                                <td class="<?php echo $change > 0 ? 'text-success' : ''; ?>">
+                                    <?php echo number_format($change); ?>đ
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                        <tr>
+                            <td><strong>Trạng thái:</strong></td>
+                            <td><span class="badge bg-success">Đã thanh toán</span></td>
+                        </tr>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">
+                                <i class="bi bi-exclamation-circle"></i> Chưa có thông tin thanh toán
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </table>
             </div>
         </div>
     </div>

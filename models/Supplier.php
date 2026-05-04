@@ -9,28 +9,38 @@ class Supplier {
     }
     
     public function getAll() {
-        $sql = "SELECT * FROM suppliers ORDER BY supplier_name ASC";
-        $stmt = $this->db->query($sql);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM suppliers WHERE pharmacy_id = ? ORDER BY supplier_name ASC";
+        $stmt = $this->db->query($sql, [$pharmacyId]);
         return $stmt->fetchAll();
     }
     
     public function getById($id) {
-        $sql = "SELECT * FROM suppliers WHERE supplier_id = ?";
-        $stmt = $this->db->query($sql, [$id]);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM suppliers WHERE supplier_id = ? AND pharmacy_id = ?";
+        $stmt = $this->db->query($sql, [$id, $pharmacyId]);
         return $stmt->fetch();
     }
     
     public function create($data) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         if (empty($data['supplier_name'])) {
             throw new Exception("Vui lòng nhập tên nhà cung cấp");
         }
         
-        $sql = "INSERT INTO suppliers (supplier_name, phone, email, address) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO suppliers (supplier_name, phone, email, address, pharmacy_id) VALUES (?, ?, ?, ?, ?)";
         return $this->db->execute($sql, [
             $data['supplier_name'],
             $data['phone'] ?? null,
             $data['email'] ?? null,
-            $data['address'] ?? null
+            $data['address'] ?? null,
+            $pharmacyId
         ]);
     }
     

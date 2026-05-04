@@ -20,7 +20,7 @@
         <div class="text-center mb-4">
             <h2>HÓA ĐƠN BÁN HÀNG</h2>
             <p>Số: <?php echo $invoice['invoice_number']; ?></p>
-            <p>Ngày: <?php echo date('d/m/Y H:i', strtotime($invoice['created_at'])); ?></p>
+            <p>Ngày: <?php echo $invoice['created_at'] ? date('d/m/Y H:i', strtotime($invoice['created_at'])) : '-'; ?></p>
         </div>
         
         <p><strong>Nhân viên:</strong> <?php echo htmlspecialchars($invoice['staff_name']); ?></p>

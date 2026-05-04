@@ -19,10 +19,6 @@
         .invoice-info {
             margin-bottom: 20px;
         }
-        .qr-code {
-            text-align: center;
-            margin: 20px 0;
-        }
     </style>
 </head>
 <body>
@@ -37,21 +33,15 @@
         </div>
         
         <div class="invoice-header">
-            <h2>HỆ THỐNG QUẢN LÝ NHÀ THUỐC</h2>
+            <h2>DUO PHARMA</h2>
             <h3>HÓA ĐƠN BÁN HÀNG</h3>
             <p>Số: <?php echo htmlspecialchars($invoice['invoice_number']); ?></p>
         </div>
         
         <div class="row invoice-info">
-            <div class="col-6">
+            <div class="col-12">
                 <p><strong>Nhân viên:</strong> <?php echo htmlspecialchars($invoice['staff_name']); ?></p>
-                <p><strong>Ngày:</strong> <?php echo date('d/m/Y H:i', strtotime($invoice['created_at'])); ?></p>
-            </div>
-            <div class="col-6 text-end">
-                <?php if (!empty($invoice['qr_code'])): ?>
-                    <img src="assets/qrcodes/<?php echo htmlspecialchars($invoice['qr_code']); ?>.png" 
-                         alt="QR Code" style="width: 100px; height: 100px;">
-                <?php endif; ?>
+                <p><strong>Ngày:</strong> <?php echo $invoice['created_at'] ? date('d/m/Y H:i', strtotime($invoice['created_at'])) : '-'; ?></p>
             </div>
         </div>
         

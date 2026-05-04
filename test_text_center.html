@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Text Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Debug styles để thấy rõ vị trí */
+        .debug-banner {
+            border: 2px solid red !important;
+        }
+        
+        .debug-content {
+            border: 2px solid blue !important;
+        }
+        
+        .debug-item {
+            border: 1px solid green !important;
+            background: rgba(0,255,0,0.1) !important;
+        }
+        
+        /* Đường kẻ giữa banner */
+        .center-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: white;
+            z-index: 9999;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Test Text Position</a>
+        </div>
+    </nav>
+
+    <!-- Banner với debug -->
+    <div id="notification-banner" class="notification-banner debug-banner">
+        <div class="center-line"></div>
+        <div id="notification-banner-content" class="notification-banner-content debug-content">
+            <div class="notification-item debug-item">
+                <span class="icon">⚠️</span>
+                <span class="message">Text phải nằm trên đường trắng - Test message 1</span>
+            </div>
+            <div class="notification-item debug-item">
+                <span class="icon">📋</span>
+                <span class="message">Kiểm tra vị trí text - Test message 2</span>
+            </div>
+            <div class="notification-item debug-item">
+                <span class="icon">🔔</span>
+                <span class="message">Text căn giữa banner - Test message 3</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar giả -->
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Bán hàng</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5>🎯 Test Text Positioning</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <h6>🔍 Kiểm tra:</h6>
+                            <ul>
+                                <li><strong>Đường trắng</strong> = Giữa banner (20px từ trên/dưới)</li>
+                                <li><strong>Text phải nằm trên đường trắng</strong></li>
+                                <li><strong>Icon và text cùng hàng</strong></li>
+                                <li><strong>Text không bị cắt trên/dưới</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button class="btn btn-primary" onclick="toggleAnimation()">
+                                    ⏸️ Dừng/Chạy Animation
+                                </button>
+                                <button class="btn btn-success" onclick="checkPosition()">
+                                    📏 Kiểm tra vị trí
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-warning" onclick="adjustText()">
+                                    🔧 Điều chỉnh Text
+                                </button>
+                                <button class="btn btn-info" onclick="resetText()">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h6>📊 Thông tin:</h6>
+                            <div id="position-info" class="bg-light p-3 rounded">
+                                <em>Nhấn "Kiểm tra vị trí" để xem thông tin...</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let animationRunning = true;
+        
+        function toggleAnimation() {
+            const content = $('#notification-banner-content');
+            if (animationRunning) {
+                content.css('animation', 'none');
+                animationRunning = false;
+            } else {
+                content.css('animation', 'scrollLeft 8s linear infinite');
+                animationRunning = true;
+            }
+        }
+        
+        function checkPosition() {
+            const banner = $('#notification-banner');
+            const content = $('#notification-banner-content');
+            const item = $('.notification-item').first();
+            const icon = $('.notification-item .icon').first();
+            const message = $('.notification-item .message').first();
+            
+            const info = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📏 Banner:</h6>
+                        <p><strong>Height:</strong> ${banner.height()}px</p>
+                        <p><strong>Center line:</strong> ${banner.height()/2}px</p>
+                        <p><strong>Content height:</strong> ${content.height()}px</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📝 Text:</h6>
+                        <p><strong>Item height:</strong> ${item.height()}px</p>
+                        <p><strong>Item padding:</strong> ${item.css('padding')}</p>
+                        <p><strong>Line height:</strong> ${item.css('line-height')}</p>
+                        <p><strong>Font size:</strong> ${item.css('font-size')}</p>
+                    </div>
+                </div>
+            `;
+            
+            $('#position-info').html(info);
+        }
+        
+        function adjustText() {
+            $('.notification-item').css({
+                'padding': '12px 20px',
+                'line-height': '1.1'
+            });
+            checkPosition();
+        }
+        
+        function resetText() {
+            $('.notification-item').css({
+                'padding': '10px 20px',
+                'line-height': '1.2'
+            });
+            checkPosition();
+        }
+        
+        $(document).ready(function() {
+            console.log('Text center test ready');
+            setTimeout(checkPosition, 1000);
+        });
+    </script>
+</body>
+</html>

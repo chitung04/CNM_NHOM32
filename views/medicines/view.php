@@ -1,5 +1,5 @@
 <?php
-require_once 'helpers/auth.php';
+require_once 'helpers/secure_session.php';
 requireLogin();
 
 $pageTitle = $pageTitle ?? 'Chi tiết thuốc';
@@ -93,11 +93,11 @@ require_once 'views/layouts/header.php';
                                     </tr>
                                     <tr>
                                         <th>Ngày tạo:</th>
-                                        <td><?= date('d/m/Y H:i', strtotime($medicine['created_at'])) ?></td>
+                                        <td><?= $medicine['created_at'] ? date('d/m/Y H:i', strtotime($medicine['created_at'])) : 'Không có thông tin' ?></td>
                                     </tr>
                                     <tr>
                                         <th>Cập nhật lần cuối:</th>
-                                        <td><?= date('d/m/Y H:i', strtotime($medicine['updated_at'])) ?></td>
+                                        <td><?= $medicine['updated_at'] ? date('d/m/Y H:i', strtotime($medicine['updated_at'])) : 'Chưa cập nhật' ?></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -187,15 +187,63 @@ require_once 'views/layouts/header.php';
                         </div>
                         <div class="card-body text-center">
                             <?php if ($medicine['qr_code']): ?>
-                                <img src="assets/qrcodes/<?= $medicine['qr_code'] ?>.png" 
-                                     alt="QR Code" 
-                                     class="img-fluid mb-3"
-                                     style="max-width: 200px;">
-                                <p class="text-muted small mb-0">
+                                <?php 
+                                $qrImagePath = 'assets/qrcodes/' . $medicine['qr_code'] . '.png';
+                                $qrImageExists = file_exists($qrImagePath);
+                                ?>
+                                
+                                <?php if ($qrImageExists): ?>
+                                    <!-- QR Code Image exists -->
+                                    <img src="<?= $qrImagePath ?>" 
+                                         alt="QR Code" 
+                                         class="img-fluid mb-3"
+                                         style="max-width: 200px;">
+                                <?php else: ?>
+                                    <!-- QR Code value exists but image file is missing -->
+                                    <div class="alert alert-warning mb-3">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <p class="mb-2">Hình ảnh QR code chưa được tạo</p>
+                                        <?php if (isManager()): ?>
+                                        <a href="generate_missing_medicine_qr.php" 
+                                           class="btn btn-sm btn-warning"
+                                           target="_blank">
+                                            <i class="bi bi-qr-code me-1"></i>
+                                            Tạo QR code
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <p class="text-muted small mb-2">
                                     <code><?= $medicine['qr_code'] ?></code>
                                 </p>
+                                
+                                <!-- Link để truy cập trực tiếp -->
+                                <div class="mt-3">
+                                    <a href="public_medicine_info.php?qr=<?= urlencode($medicine['qr_code']) ?>" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       target="_blank"
+                                       title="Mở trang thông tin thuốc">
+                                        <i class="bi bi-link-45deg me-1"></i>
+                                        Xem thông tin thuốc
+                                    </a>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Click vào link nếu không thể quét mã QR
+                                </small>
                             <?php else: ?>
                                 <p class="text-muted">Chưa có mã QR</p>
+                                <?php if (isManager()): ?>
+                                <div class="mt-3">
+                                    <a href="generate_missing_medicine_qr.php" 
+                                       class="btn btn-outline-success btn-sm"
+                                       target="_blank">
+                                        <i class="bi bi-qr-code me-1"></i>
+                                        Tạo mã QR
+                                    </a>
+                                </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>

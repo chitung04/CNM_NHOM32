@@ -20,12 +20,13 @@
                         <th>Ngày nhập</th>
                         <th>Hạn sử dụng</th>
                         <th>Còn lại</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($batches)): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted">
+                            <td colspan="8" class="text-center text-muted">
                                 <i class="bi bi-check-circle fs-1 d-block mb-2"></i>
                                 Không có lô thuốc nào sắp hết hạn
                             </td>
@@ -41,12 +42,19 @@
                                 <td><?php echo htmlspecialchars($batch['medicine_name']); ?></td>
                                 <td><?php echo htmlspecialchars($batch['supplier_name'] ?? '-'); ?></td>
                                 <td><span class="badge bg-secondary"><?php echo $batch['quantity']; ?></span></td>
-                                <td><?php echo date('d/m/Y', strtotime($batch['import_date'])); ?></td>
-                                <td><?php echo date('d/m/Y', strtotime($batch['expiry_date'])); ?></td>
+                                <td><?php echo $batch['import_date'] ? date('d/m/Y', strtotime($batch['import_date'])) : '-'; ?></td>
+                                <td><?php echo $batch['expiry_date'] ? date('d/m/Y', strtotime($batch['expiry_date'])) : '-'; ?></td>
                                 <td>
                                     <span class="badge bg-<?php echo $urgencyClass; ?>">
                                         <?php echo $daysLeft; ?> ngày
                                     </span>
+                                </td>
+                                <td>
+                                    <a href="index.php?page=batches&action=view&id=<?php echo $batch['batch_id']; ?>" 
+                                       class="btn btn-sm btn-outline-info" 
+                                       title="Xem chi tiết lô thuốc">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

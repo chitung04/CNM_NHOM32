@@ -27,7 +27,7 @@ require_once 'helpers/audit.php';
                                 </tr>
                                 <tr>
                                     <th>Thời gian:</th>
-                                    <td><?= date('d/m/Y H:i:s', strtotime($log['created_at'])) ?></td>
+                                    <td><?= $log['created_at'] ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
                                 </tr>
                                 <tr>
                                     <th>Người dùng:</th>

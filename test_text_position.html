@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Text Position</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Debug styles */
+        .debug-banner {
+            border: 2px solid red;
+            position: relative;
+        }
+        
+        .debug-content {
+            border: 2px solid blue;
+            background: rgba(0,0,255,0.1);
+        }
+        
+        .debug-item {
+            border: 1px solid green;
+            background: rgba(0,255,0,0.1);
+        }
+        
+        .center-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: red;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Test Text Position</a>
+        </div>
+    </nav>
+
+    <!-- Debug Banner với đường kẻ giữa -->
+    <div id="notification-banner" class="notification-banner debug-banner">
+        <div class="center-line"></div>
+        <div id="notification-banner-content" class="notification-banner-content debug-content">
+            <div class="notification-item debug-item">
+                <span class="icon">⚠️</span>
+                <span class="message">Test message 1 - Đây là thông báo test để kiểm tra vị trí</span>
+            </div>
+            <div class="notification-item debug-item">
+                <span class="icon">⏰</span>
+                <span class="message">Test message 2 - Thông báo thứ hai để test</span>
+            </div>
+            <div class="notification-item debug-item">
+                <span class="icon">📋</span>
+                <span class="message">Test message 3 - Thông báo thứ ba</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5>🔍 Test Vị Trí Text Trong Banner</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <h6>Debug Info:</h6>
+                            <ul>
+                                <li><strong>Đường đỏ</strong> = Giữa banner (20px từ trên xuống)</li>
+                                <li><strong>Viền xanh dương</strong> = Container chứa text</li>
+                                <li><strong>Viền xanh lá</strong> = Từng item thông báo</li>
+                                <li><strong>Text phải nằm trên đường đỏ</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="toggleAnimation()">
+                            🔄 Bật/Tắt Animation
+                        </button>
+                        
+                        <button class="btn btn-success" onclick="addMoreText()">
+                            ➕ Thêm Text
+                        </button>
+                        
+                        <div class="mt-3">
+                            <h6>Thông tin banner:</h6>
+                            <div id="info">
+                                <p><strong>Banner height:</strong> <span id="banner-height"></span>px</p>
+                                <p><strong>Content height:</strong> <span id="content-height"></span>px</p>
+                                <p><strong>Item height:</strong> <span id="item-height"></span>px</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let animationEnabled = true;
+        
+        function toggleAnimation() {
+            const content = $('#notification-banner-content');
+            if (animationEnabled) {
+                content.css('animation', 'none');
+                animationEnabled = false;
+            } else {
+                content.css('animation', 'scrollLeft 8s linear infinite');
+                animationEnabled = true;
+            }
+        }
+        
+        function addMoreText() {
+            const content = $('#notification-banner-content');
+            const newItem = `
+                <div class="notification-item debug-item">
+                    <span class="icon">🔔</span>
+                    <span class="message">Thông báo mới được thêm - ${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            content.append(newItem);
+            updateInfo();
+        }
+        
+        function updateInfo() {
+            $('#banner-height').text($('#notification-banner').height());
+            $('#content-height').text($('#notification-banner-content').height());
+            $('#item-height').text($('.notification-item').first().height());
+        }
+        
+        $(document).ready(function() {
+            updateInfo();
+            setInterval(updateInfo, 1000);
+        });
+    </script>
+</body>
+</html>

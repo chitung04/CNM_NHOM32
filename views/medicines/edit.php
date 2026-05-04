@@ -97,7 +97,7 @@
                 <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Thông tin</h6>
                 <ul class="small mb-0">
                     <li><strong>ID:</strong> <?php echo $medicine['medicine_id']; ?></li>
-                    <li><strong>Ngày tạo:</strong> <?php echo date('d/m/Y H:i', strtotime($medicine['created_at'])); ?></li>
+                    <li><strong>Ngày tạo:</strong> <?php echo $medicine['created_at'] ? date('d/m/Y H:i', strtotime($medicine['created_at'])) : '-'; ?></li>
                     <?php if (!empty($medicine['qr_code'])): ?>
                         <li><strong>Mã QR:</strong> <?php echo htmlspecialchars($medicine['qr_code']); ?></li>
                     <?php endif; ?>

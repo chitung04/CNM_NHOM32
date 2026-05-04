@@ -54,4 +54,41 @@ class InvoiceController {
         $pageTitle = "In hóa đơn #" . $invoice['invoice_number'];
         require_once 'views/invoices/print.php';
     }
+    
+    /**
+     * Xóa đơn hàng (chỉ manager)
+     */
+    public function delete() {
+        // Kiểm tra quyền manager
+        if (!hasRole('manager')) {
+            $_SESSION['error'] = "Bạn không có quyền xóa đơn hàng";
+            header('Location: index.php?page=invoices');
+            exit;
+        }
+        
+        $id = $_GET['id'] ?? 0;
+        
+        try {
+            $invoice = $this->invoiceModel->getById($id);
+            
+            if (!$invoice) {
+                throw new Exception("Không tìm thấy đơn hàng");
+            }
+            
+            // Xóa đơn hàng (sẽ xóa cả invoice_details do foreign key cascade)
+            $result = $this->invoiceModel->delete($id);
+            
+            if ($result) {
+                $_SESSION['success'] = "Đã xóa đơn hàng #" . $invoice['invoice_number'] . " thành công";
+            } else {
+                throw new Exception("Không thể xóa đơn hàng");
+            }
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Lỗi: " . $e->getMessage();
+        }
+        
+        header('Location: index.php?page=invoices');
+        exit;
+    }
 }

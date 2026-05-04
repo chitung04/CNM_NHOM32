@@ -4,29 +4,29 @@
 // Load cấu hình
 require_once 'config/config.php';
 
-// Khởi tạo session sau khi cấu hình session đã được thiết lập
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Load secure session system
+require_once 'helpers/secure_session.php';
+
+// Khởi tạo secure session
+$secureSession = SecureSession::getInstance();
 
 require_once 'config/database.php';
 
 // Load helpers
 require_once 'helpers/functions.php';
-require_once 'helpers/auth.php';
 require_once 'helpers/permissions.php';
 require_once 'helpers/security.php';
-require_once 'helpers/csrf.php';
 require_once 'helpers/logger.php';
 require_once 'helpers/audit.php';
+require_once 'helpers/pharmacy.php';
 
 // Simple routing
 $page = sanitize($_GET['page'] ?? 'dashboard');
 $action = sanitize($_GET['action'] ?? 'index');
 
 // Kiểm tra đăng nhập (trừ trang login)
-if ($page !== 'auth' && !isLoggedIn()) {
-    header('Location: index.php?page=auth&action=login');
+if ($page !== 'auth' && !$secureSession->isLoggedIn()) {
+    header('Location: index.php?page=auth&action=login&reason=session_required');
     exit;
 }
 
@@ -39,6 +39,8 @@ switch ($page) {
             $controller->login();
         } elseif ($action === 'logout') {
             $controller->logout();
+        } elseif ($action === 'register') {
+            $controller->register();
         }
         break;
         
@@ -96,6 +98,21 @@ switch ($page) {
             case 'view':
                 $controller->view();
                 break;
+            case 'import':
+                $controller->import();
+                break;
+            case 'process_import':
+                $controller->processImport();
+                break;
+            case 'import_sql':
+                $controller->importSql();
+                break;
+            case 'process_import_sql':
+                $controller->processImportSql();
+                break;
+            case 'download_template':
+                $controller->downloadTemplate();
+                break;
             default:
                 $controller->index();
                 break;
@@ -138,6 +155,10 @@ switch ($page) {
             case 'print':
                 $controller->print();
                 break;
+            case 'delete':
+                requireManager();
+                $controller->delete();
+                break;
             default:
                 $controller->index();
                 break;
@@ -158,6 +179,9 @@ switch ($page) {
                 break;
             case 'expiry':
                 $controller->expiry();
+                break;
+            case 'lowStock':
+                $controller->lowStock();
                 break;
             case 'topSelling':
                 $controller->topSelling();
@@ -250,6 +274,10 @@ switch ($page) {
         requireLogin();
         if ($action === 'permissions') {
             require_once 'views/profile/permissions.php';
+        } elseif ($action === 'edit') {
+            require_once 'views/profile/edit.php';
+        } elseif ($action === 'change_password') {
+            require_once 'views/profile/change_password.php';
         } else {
             require_once 'views/profile/index.php';
         }
@@ -271,11 +299,32 @@ switch ($page) {
             case 'view':
                 $controller->view();
                 break;
+            case 'export':
+                $controller->export();
+                break;
             case 'statistics':
                 $controller->statistics();
                 break;
             case 'cleanup':
                 $controller->cleanup();
+                break;
+            default:
+                $controller->index();
+                break;
+        }
+        break;
+        
+    case 'notifications':
+        requireLogin();
+        require_once 'controllers/NotificationController.php';
+        $controller = new NotificationController();
+        
+        switch ($action) {
+            case 'markAsRead':
+                $controller->markAsRead();
+                break;
+            case 'markAllAsRead':
+                $controller->markAllAsRead();
                 break;
             default:
                 $controller->index();

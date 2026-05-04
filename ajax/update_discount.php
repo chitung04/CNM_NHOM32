@@ -5,7 +5,7 @@ session_start();
 $basePath = dirname(__DIR__);
 require_once $basePath . '/config/config.php';
 require_once $basePath . '/config/database.php';
-require_once $basePath . '/helpers/auth.php';
+require_once $basePath . '/helpers/secure_session.php';
 require_once $basePath . '/models/Database.php';
 
 header('Content-Type: application/json');

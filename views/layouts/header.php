@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle ?? 'Hệ thống quản lý nhà thuốc'; ?></title>
+    <title><?php echo $pageTitle ?? 'DUO PHARMA - Hệ thống quản lý nhà thuốc'; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
     <?php require_once 'navbar.php'; ?>
+    <!-- Notification Banner - Sát với navbar -->
+    <div id="notification-banner" class="notification-banner">
+        <div class="notification-banner-wrapper">
+            <div id="notification-banner-content" class="notification-banner-content">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+    </div>
     
     <div class="container-fluid">
         <div class="row">

@@ -1,6 +1,6 @@
-# Pharmacy Management System (Hệ thống Quản lý Nhà thuốc)
+# DUO PHARMA - Pharmacy Management System
 
-Hệ thống quản lý nhà thuốc với đầy đủ chức năng quản lý thuốc, bán hàng, tồn kho, và báo cáo.
+DUO PHARMA - Hệ thống quản lý nhà thuốc với đầy đủ chức năng quản lý thuốc, bán hàng, tồn kho, và báo cáo.
 
 ## Yêu cầu hệ thống
 

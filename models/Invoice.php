@@ -19,6 +19,9 @@ class Invoice {
      * Tạo hóa đơn mới
      */
     public function create($data) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         try {
             $conn = $this->db->getConnection();
             $conn->beginTransaction();
@@ -31,15 +34,16 @@ class Invoice {
             $qrCode = generateUniqueQRCode('INV');
             
             // Insert invoice
-            $sql = "INSERT INTO invoices (invoice_number, user_id, total_amount, discount, final_amount, qr_code) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO invoices (invoice_number, user_id, total_amount, discount, final_amount, qr_code, payment_method, pharmacy_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, NULL, ?)";
             $this->db->execute($sql, [
                 $invoiceNumber,
                 $data['user_id'],
                 $data['total_amount'],
                 $data['discount'] ?? 0,
                 $data['final_amount'],
-                $qrCode
+                $qrCode,
+                $pharmacyId
             ]);
             
             $invoiceId = $this->db->lastInsertId();
@@ -84,11 +88,14 @@ class Invoice {
      * Lấy hóa đơn theo ID
      */
     public function getById($id) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         $sql = "SELECT i.*, u.full_name as staff_name
                 FROM invoices i
                 LEFT JOIN users u ON i.user_id = u.user_id
-                WHERE i.invoice_id = ?";
-        $stmt = $this->db->query($sql, [$id]);
+                WHERE i.invoice_id = ? AND i.pharmacy_id = ?";
+        $stmt = $this->db->query($sql, [$id, $pharmacyId]);
         return $stmt->fetch();
     }
     
@@ -109,12 +116,16 @@ class Invoice {
      * Lấy tất cả hóa đơn
      */
     public function getAll($filters = []) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         $sql = "SELECT i.*, u.full_name as staff_name
                 FROM invoices i
                 LEFT JOIN users u ON i.user_id = u.user_id
+                WHERE i.pharmacy_id = ?
                 ORDER BY i.created_at DESC
                 LIMIT 100";
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$pharmacyId]);
         return $stmt->fetchAll();
     }
     
@@ -122,12 +133,16 @@ class Invoice {
      * Lấy hóa đơn theo khoảng thời gian
      */
     public function getByDateRange($startDate, $endDate) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         $sql = "SELECT i.*, u.full_name as staff_name
                 FROM invoices i
                 LEFT JOIN users u ON i.user_id = u.user_id
-                WHERE DATE(i.created_at) BETWEEN ? AND ?
+                WHERE i.pharmacy_id = ?
+                  AND DATE(i.created_at) BETWEEN ? AND ?
                 ORDER BY i.created_at DESC";
-        $stmt = $this->db->query($sql, [$startDate, $endDate]);
+        $stmt = $this->db->query($sql, [$pharmacyId, $startDate, $endDate]);
         return $stmt->fetchAll();
     }
     
@@ -135,10 +150,14 @@ class Invoice {
      * Tính tổng doanh thu
      */
     public function getTotalRevenue($startDate, $endDate) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         $sql = "SELECT COALESCE(SUM(final_amount), 0) as total
                 FROM invoices
-                WHERE DATE(created_at) BETWEEN ? AND ?";
-        $stmt = $this->db->query($sql, [$startDate, $endDate]);
+                WHERE pharmacy_id = ?
+                  AND DATE(created_at) BETWEEN ? AND ?";
+        $stmt = $this->db->query($sql, [$pharmacyId, $startDate, $endDate]);
         $result = $stmt->fetch();
         return $result['total'];
     }
@@ -182,9 +201,28 @@ class Invoice {
     }
     
     /**
+     * Lấy danh sách hóa đơn chưa thanh toán của user
+     */
+    public function getPendingByUser($userId) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT i.*, u.full_name as staff_name
+                FROM invoices i
+                LEFT JOIN users u ON i.user_id = u.user_id
+                WHERE i.user_id = ? AND i.pharmacy_id = ? AND i.payment_method IS NULL
+                ORDER BY i.created_at DESC";
+        $stmt = $this->db->query($sql, [$userId, $pharmacyId]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
      * Lấy danh sách thuốc bán chạy
      */
     public function getTopSellingMedicines($startDate, $endDate, $limit = 10) {
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
         $sql = "SELECT 
                     m.medicine_id,
                     m.medicine_name,
@@ -198,11 +236,12 @@ class Invoice {
                 INNER JOIN medicines m ON id.medicine_id = m.medicine_id
                 LEFT JOIN categories c ON m.category_id = c.category_id
                 LEFT JOIN units u ON m.unit_id = u.unit_id
-                WHERE DATE(i.created_at) BETWEEN ? AND ?
+                WHERE i.pharmacy_id = ?
+                  AND DATE(i.created_at) BETWEEN ? AND ?
                 GROUP BY m.medicine_id
                 ORDER BY total_quantity DESC
                 LIMIT ?";
-        $stmt = $this->db->query($sql, [$startDate, $endDate, $limit]);
+        $stmt = $this->db->query($sql, [$pharmacyId, $startDate, $endDate, $limit]);
         return $stmt->fetchAll();
     }
 }

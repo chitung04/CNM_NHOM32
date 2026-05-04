@@ -10,68 +10,70 @@ class AuditController {
     }
     
     /**
-     * Danh sách audit logs
+     * Trang chính - danh sách audit logs
      */
     public function index() {
-        requireManager();
-        
-        $page = $_GET['p'] ?? 1;
+        $page = max(1, intval($_GET['p'] ?? 1));
         $limit = 50;
         $offset = ($page - 1) * $limit;
         
         // Filters
-        $filters = [];
-        if (!empty($_GET['user_id'])) {
-            $filters['user_id'] = $_GET['user_id'];
-        }
-        if (!empty($_GET['action'])) {
-            $filters['action'] = $_GET['action'];
-        }
-        if (!empty($_GET['table_name'])) {
-            $filters['table_name'] = $_GET['table_name'];
-        }
+        $filters = [
+            'user_id' => $_GET['user_id'] ?? '',
+            'action' => $_GET['action'] ?? '',
+            'table_name' => $_GET['table_name'] ?? '',
+            'start_date' => $_GET['start_date'] ?? '',
+            'end_date' => $_GET['end_date'] ?? ''
+        ];
         
-        // Lấy logs
-        if (!empty($filters)) {
-            $logs = $this->getFilteredLogs($filters, $limit, $offset);
-        } else {
-            $logs = $this->auditModel->getAll($limit, $offset);
-        }
-        
-        $totalLogs = $this->auditModel->count($filters);
+        // Lấy logs với filters
+        $logs = $this->getFilteredLogs($filters, $limit, $offset);
+        $totalLogs = $this->auditModel->count(array_filter($filters));
         $totalPages = ceil($totalLogs / $limit);
+        
+        // Thống kê nhanh
+        $todayCount = $this->auditModel->getTodayCount();
+        $weekCount = $this->auditModel->getWeekCount();
+        $activeUsers = $this->auditModel->getActiveUsersCount();
         
         // Lấy danh sách users cho filter
         require_once 'models/User.php';
         $userModel = new User();
         $users = $userModel->getAll();
         
-        $pageTitle = "Nhật ký hoạt động";
+        // Lấy danh sách actions và tables
+        $actions = $this->getUniqueActions();
+        $tables = $this->getUniqueTables();
+        
+        $pageTitle = "Nhật ký hoạt động hệ thống";
         require_once 'views/audit/index.php';
     }
     
     /**
-     * Xem chi tiết log
+     * Xem chi tiết một log entry
      */
     public function view() {
-        requireManager();
+        $id = $_GET['id'] ?? 0;
         
-        $logId = $_GET['id'] ?? 0;
-        $sql = "SELECT al.*, u.username, u.full_name
-                FROM audit_logs al
-                LEFT JOIN users u ON al.user_id = u.user_id
-                WHERE al.log_id = ?";
-        
-        $stmt = $this->auditModel->db->query($sql, [$logId]);
-        $log = $stmt->fetch();
-        
-        if (!$log) {
-            $_SESSION['error'] = "Không tìm thấy log";
+        if (!$id) {
+            $_SESSION['error'] = "Không tìm thấy log entry";
             header('Location: index.php?page=audit');
             exit;
         }
         
-        $pageTitle = "Chi tiết nhật ký";
+        $log = $this->auditModel->getById($id);
+        
+        if (!$log) {
+            $_SESSION['error'] = "Không tìm thấy log entry";
+            header('Location: index.php?page=audit');
+            exit;
+        }
+        
+        // Parse JSON data
+        $log['old_values_parsed'] = $log['old_values'] ? json_decode($log['old_values'], true) : null;
+        $log['new_values_parsed'] = $log['new_values'] ? json_decode($log['new_values'], true) : null;
+        
+        $pageTitle = "Chi tiết log #" . $log['log_id'];
         require_once 'views/audit/view.php';
     }
     
@@ -79,44 +81,65 @@ class AuditController {
      * Thống kê hoạt động
      */
     public function statistics() {
-        requireManager();
-        
-        $startDate = $_GET['start_date'] ?? date('Y-m-01');
+        $startDate = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
         $endDate = $_GET['end_date'] ?? date('Y-m-d');
         
-        $stats = $this->auditModel->getStatistics($startDate, $endDate);
+        // Thống kê theo action
+        $actionStats = $this->auditModel->getStatistics($startDate, $endDate);
         
         // Thống kê theo user
-        $sql = "SELECT u.username, u.full_name, COUNT(*) as action_count
-                FROM audit_logs al
-                INNER JOIN users u ON al.user_id = u.user_id
-                WHERE DATE(al.created_at) BETWEEN ? AND ?
-                GROUP BY al.user_id
-                ORDER BY action_count DESC
-                LIMIT 10";
-        $stmt = $this->auditModel->db->query($sql, [$startDate, $endDate]);
-        $userStats = $stmt->fetchAll();
+        $userStats = $this->getUserStatistics($startDate, $endDate);
         
-        $pageTitle = "Thống kê hoạt động";
+        // Thống kê theo table
+        $tableStats = $this->getTableStatistics($startDate, $endDate);
+        
+        // Thống kê theo ngày
+        $dailyStats = $this->getDailyStatistics($startDate, $endDate);
+        
+        $pageTitle = "Thống kê hoạt động hệ thống";
         require_once 'views/audit/statistics.php';
     }
     
     /**
-     * Cleanup logs cũ
+     * Export logs ra CSV
+     */
+    public function export() {
+        $format = $_GET['format'] ?? 'csv';
+        $startDate = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
+        $endDate = $_GET['end_date'] ?? date('Y-m-d');
+        
+        $logs = $this->auditModel->getByDateRange($startDate, $endDate, 10000);
+        
+        if ($format === 'csv') {
+            $this->exportCSV($logs, $startDate, $endDate);
+        } else {
+            $_SESSION['error'] = "Định dạng export không được hỗ trợ";
+            header('Location: index.php?page=audit');
+        }
+    }
+    
+    /**
+     * Dọn dẹp logs cũ
      */
     public function cleanup() {
-        requireManager();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?page=audit');
+            exit;
+        }
         
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $days = $_POST['days'] ?? 90;
+        try {
+            $days = intval($_POST['days'] ?? 90);
             
-            try {
-                $deleted = $this->auditModel->cleanup($days);
-                $_SESSION['success'] = "Đã xóa logs cũ hơn $days ngày";
-                auditLog('CLEANUP', 'audit_logs', null, null, ['days' => $days, 'deleted' => $deleted]);
-            } catch (Exception $e) {
-                $_SESSION['error'] = "Lỗi: " . $e->getMessage();
+            if ($days < 30) {
+                throw new Exception("Không thể xóa logs mới hơn 30 ngày");
             }
+            
+            $deletedCount = $this->auditModel->cleanup($days);
+            
+            $_SESSION['success'] = "Đã xóa {$deletedCount} logs cũ hơn {$days} ngày";
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Lỗi khi dọn dẹp: " . $e->getMessage();
         }
         
         header('Location: index.php?page=audit');
@@ -127,33 +150,96 @@ class AuditController {
      * Lấy logs với filters
      */
     private function getFilteredLogs($filters, $limit, $offset) {
-        $sql = "SELECT al.*, u.username, u.full_name
-                FROM audit_logs al
-                LEFT JOIN users u ON al.user_id = u.user_id
-                WHERE 1=1";
+        // Sử dụng method có sẵn trong AuditLog thay vì truy cập trực tiếp database
+        return $this->auditModel->getFilteredLogs($filters, $limit, $offset);
+    }
+    
+    /**
+     * Lấy danh sách actions duy nhất
+     */
+    private function getUniqueActions() {
+        return $this->auditModel->getUniqueActions();
+    }
+    
+    /**
+     * Lấy danh sách tables duy nhất
+     */
+    private function getUniqueTables() {
+        return $this->auditModel->getUniqueTables();
+    }
+    
+    /**
+     * Thống kê theo user
+     */
+    private function getUserStatistics($startDate, $endDate) {
+        return $this->auditModel->getUserStatistics($startDate, $endDate);
+    }
+    
+    /**
+     * Thống kê theo table
+     */
+    private function getTableStatistics($startDate, $endDate) {
+        return $this->auditModel->getTableStatistics($startDate, $endDate);
+    }
+    
+    /**
+     * Thống kê theo ngày
+     */
+    private function getDailyStatistics($startDate, $endDate) {
+        return $this->auditModel->getDailyStatistics($startDate, $endDate);
+    }
+    
+    /**
+     * Export ra CSV
+     */
+    private function exportCSV($logs, $startDate, $endDate) {
+        $filename = "audit_logs_{$startDate}_to_{$endDate}.csv";
         
-        $params = [];
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Expires: 0');
         
-        if (!empty($filters['user_id'])) {
-            $sql .= " AND al.user_id = ?";
-            $params[] = $filters['user_id'];
+        $output = fopen('php://output', 'w');
+        
+        // BOM for UTF-8
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Headers
+        fputcsv($output, [
+            'ID',
+            'Thời gian',
+            'Người dùng',
+            'Hành động',
+            'Bảng',
+            'ID bản ghi',
+            'Dữ liệu cũ',
+            'Dữ liệu mới',
+            'IP Address',
+            'User Agent'
+        ]);
+        
+        // Data
+        foreach ($logs as $log) {
+            fputcsv($output, [
+                $log['log_id'],
+                $log['created_at'],
+                $log['full_name'] ?? $log['username'] ?? 'System',
+                getActionName($log['action']),
+                getTableName($log['table_name']),
+                $log['record_id'],
+                $log['old_values'],
+                $log['new_values'],
+                $log['ip_address'],
+                $log['user_agent']
+            ]);
         }
         
-        if (!empty($filters['action'])) {
-            $sql .= " AND al.action = ?";
-            $params[] = $filters['action'];
-        }
+        fclose($output);
         
-        if (!empty($filters['table_name'])) {
-            $sql .= " AND al.table_name = ?";
-            $params[] = $filters['table_name'];
-        }
+        // Log export action
+        auditExport('audit_logs', 'csv', count($logs));
         
-        $sql .= " ORDER BY al.created_at DESC LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
-        
-        $stmt = $this->auditModel->db->query($sql, $params);
-        return $stmt->fetchAll();
+        exit;
     }
 }

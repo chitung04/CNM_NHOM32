@@ -6,20 +6,24 @@ body {
 
 /* Navbar */
 .navbar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1050 !important; /* Navbar ở dưới */
+    margin-bottom: 0 !important; /* Sát với banner */
+    border-bottom: none !important;
 }
 
-/* Sidebar */
+/* Sidebar - z-index cao để không bị banner đè */
 .sidebar {
     position: fixed;
     top: 56px;
     bottom: 0;
     left: 0;
-    z-index: 100;
+    z-index: 100 !important; /* CAO HƠN BANNER (z-index: 50) */
     padding: 0;
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
     overflow-y: auto;
+    background-color: #f8f9fa !important; /* Đảm bảo có background */
 }
 
 .sidebar .nav-link {
@@ -28,18 +32,24 @@ body {
     padding: 0.75rem 1rem;
     border-left: 3px solid transparent;
     transition: all 0.3s;
+    background-color: white;
+    margin: 2px 8px;
+    border-radius: 8px;
 }
 
 .sidebar .nav-link:hover {
-    color: #667eea;
-    background-color: #f8f9fa;
-    border-left-color: #667eea;
+    color: #1f2937;
+    background-color: #f8fafc;
+    border-left-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .sidebar .nav-link.active {
-    color: #667eea;
-    background-color: #e7f1ff;
-    border-left-color: #667eea;
+    color: white;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-left-color: #1e40af;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    font-weight: 600;
 }
 
 .sidebar .nav-link i {
@@ -57,9 +67,52 @@ body {
 
 /* Main content */
 .main-content {
-    margin-top: 56px;
-    padding-top: 2rem;
-    min-height: calc(100vh - 56px);
+    margin-top: 116px !important; /* 56px navbar + 60px banner dày */
+    padding: 2rem 1.5rem;
+    min-height: calc(100vh - 116px);
+    background: url('../images/bìa2.png') center/cover no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Fix layout issues */
+.main-content > * {
+    position: relative;
+    z-index: 1;
+}
+
+.container-fluid .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Ensure consistent spacing */
+.main-content .row {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+}
+
+.main-content .col-md-3,
+.main-content .col-md-6,
+.main-content .col-md-9,
+.main-content .col-md-12,
+.main-content .col-12 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
 /* Cards */
@@ -69,6 +122,8 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     margin-bottom: 1.5rem;
     transition: transform 0.2s;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px);
 }
 
 .card:hover {
@@ -92,18 +147,19 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
     border: none;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4);
 }
 
 /* Tables */
 .table {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(3px);
 }
 
 .table thead th {
@@ -138,8 +194,8 @@ body {
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
 }
 
 /* Alerts */
@@ -190,6 +246,347 @@ body {
     border-width: 0.15em;
 }
 
+/* Notification banner cuộn tròn liên tục */
+.notification-banner {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24, #ff6b6b);
+    color: white;
+    padding: 12px 0;
+    z-index: 1040;
+    overflow: hidden;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    height: 50px;
+}
+
+/* Responsive positioning để không đè lên sidebar */
+@media (min-width: 768px) {
+    .notification-banner {
+        left: 25%; /* col-md-3 = 25% */
+    }
+}
+
+@media (min-width: 992px) {
+    .notification-banner {
+        left: 16.67%; /* col-lg-2 = 16.67% */
+    }
+}
+
+.notification-banner.show {
+    display: block;
+}
+
+.notification-banner-wrapper {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+.notification-banner-content {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    animation: scrollHorizontal 600s linear infinite !important;
+    white-space: nowrap;
+    width: max-content;
+    min-width: 200vw;
+}
+
+.notification-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 30px;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    min-width: 350px;
+    flex-shrink: 0;
+}
+
+.notification-item .icon {
+    font-size: 18px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.notification-item .message {
+    flex: 1;
+    white-space: nowrap;
+}
+
+.notification-item.low-stock {
+    color: #fff;
+    margin-right: 30px;
+}
+
+.notification-item.expiry-warning {
+    color: #fff;
+    margin-right: 30px;
+}
+
+@keyframes scrollHorizontal {
+    0% { 
+        transform: translateY(-50%) translateX(100vw); 
+    }
+    100% { 
+        transform: translateY(-50%) translateX(-100%); 
+    }
+}
+
+.notification-banner-urgent {
+    background: linear-gradient(45deg, #dc3545, #c82333, #dc3545);
+    animation: bannerFlash 2s ease-in-out infinite;
+}
+
+.notification-banner-urgent .notification-banner-content {
+    animation: scrollHorizontal 480s linear infinite !important;
+}
+
+.notification-banner-urgent .notification-item {
+    font-size: 15px;
+    min-width: 380px;
+}
+
+.notification-banner-critical {
+    background: linear-gradient(45deg, #721c24, #dc3545, #721c24);
+    animation: bannerFlash 1s ease-in-out infinite;
+}
+
+.notification-banner-critical .notification-banner-content {
+    animation: scrollHorizontal 360s linear infinite !important;
+}
+
+.notification-banner-critical .notification-item {
+    font-size: 16px;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    min-width: 400px;
+}
+
+@keyframes bannerFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+/* Điều chỉnh main content để không bị che bởi banner */
+.main-content.with-banner {
+    margin-top: 106px; /* 56px navbar + 50px banner */
+}
+
+/* Notification text bên ngoài chuông */
+
+/* Notification text bên ngoài chuông */
+.notification-text {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 10px;
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notification-text::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #ff6b6b;
+}
+
+.notification-text-active {
+    animation: textPulse 2s ease-in-out infinite, textSlide 3s ease-in-out infinite;
+}
+
+.notification-text-urgent {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    animation: textPulse 1s ease-in-out infinite, textSlide 2s ease-in-out infinite, textFlash 0.8s ease-in-out infinite;
+    max-width: 400px;
+}
+
+.notification-text-urgent::after {
+    border-left-color: #dc3545;
+}
+
+.notification-text-critical {
+    background: linear-gradient(45deg, #721c24, #dc3545);
+    animation: textPulse 0.6s ease-in-out infinite, textSlide 1.5s ease-in-out infinite, textFlash 0.4s ease-in-out infinite;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    max-width: 450px;
+    font-size: 13px;
+}
+
+.notification-text-critical::after {
+    border-left-color: #721c24;
+}
+
+@keyframes textPulse {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.05); }
+}
+
+@keyframes textSlide {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(-5px); }
+}
+
+@keyframes textFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Notification bell animation */
+@keyframes bellBounce {
+    0%, 20%, 50%, 80%, 100% { 
+        transform: translateY(0); 
+    }
+    40% { 
+        transform: translateY(-8px); 
+    }
+    60% { 
+        transform: translateY(-4px); 
+    }
+}
+
+@keyframes bellBounceUrgent {
+    0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100% { 
+        transform: translateY(0); 
+    }
+    5%, 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% { 
+        transform: translateY(-8px); 
+    }
+}
+
+@keyframes bellBounceCritical {
+    0% { transform: translateY(0) scale(1); }
+    25% { transform: translateY(-12px) scale(1.1); }
+    50% { transform: translateY(0) scale(1); }
+    75% { transform: translateY(-6px) scale(1.05); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes bellPulse {
+    0% { 
+        transform: scale(1);
+        color: inherit;
+        text-shadow: none;
+    }
+    50% { 
+        transform: scale(1.15);
+        color: #ff6b6b;
+        text-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+    }
+    100% { 
+        transform: scale(1);
+        color: inherit;
+        text-shadow: none;
+    }
+}
+
+@keyframes bellShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px) rotate(-2deg); }
+    20%, 40%, 60%, 80% { transform: translateX(2px) rotate(2deg); }
+}
+
+.notification-bell-active {
+    animation: bellBounce 1.5s ease-in-out infinite, bellPulse 2s ease-in-out infinite;
+    transform-origin: center;
+    color: #ffc107 !important;
+}
+
+.notification-bell-urgent {
+    animation: bellBounceUrgent 0.8s ease-in-out infinite, bellPulse 1s ease-in-out infinite;
+    transform-origin: center;
+    color: #dc3545 !important;
+}
+
+/* Notification badge animations */
+@keyframes badgePulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% { 
+        transform: scale(1.2);
+        box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+@keyframes badgeUrgentPulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.9);
+        background-color: #dc3545;
+    }
+    50% { 
+        transform: scale(1.3);
+        box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+        background-color: #ff1744;
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        background-color: #dc3545;
+    }
+}
+
+.notification-badge-active {
+    animation: badgePulse 2s infinite;
+}
+
+.notification-badge-urgent {
+    animation: badgeUrgentPulse 1s infinite;
+}
+
+/* Modal fixes */
+.modal {
+    z-index: 1060 !important;
+}
+
+.modal-backdrop {
+    z-index: 1055 !important;
+}
+
+.modal-dialog {
+    z-index: 1061 !important;
+}
+
+/* Ensure modal content is above everything */
+.modal-content {
+    position: relative;
+    z-index: 1062 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: none !important;
+}
+
+/* Fix modal body scrolling */
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
 /* Responsive */
 @media (max-width: 767.98px) {
     .sidebar {
@@ -199,5 +596,342 @@ body {
     
     .main-content {
         margin-top: 0;
+    }
+}
+
+/* Notification Banner - Giống như hình mẫu */
+.notification-banner {
+    position: fixed;
+    top: 56px; /* SÁT VỚI NAVBAR */
+    left: 0; /* Mobile: full width */
+    width: 100%;
+    background: linear-gradient(90deg, #dc3545, #fd7e14) !important; /* MÀU ĐỎ CAM GIỐNG HÌNH */
+    color: white;
+    height: 40px; /* CHIỀU CAO VỪA PHẢI GIỐNG HÌNH */
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 50 !important;
+    margin: 0;
+    padding: 0;
+    display: block;
+    line-height: 40px; /* LINE HEIGHT BẰNG CHIỀU CAO */
+}
+
+.notification-banner-wrapper {
+    position: relative;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    line-height: 40px; /* LINE HEIGHT BẰNG CHIỀU CAO BANNER */
+}
+
+/* Desktop - BẮT ĐẦU SAU SIDEBAR, không vào vùng menu */
+@media (min-width: 768px) {
+    .notification-banner {
+        top: 56px; /* SÁT NAVBAR */
+        left: 25%; /* BẮT ĐẦU SAU SIDEBAR (col-md-3 = 25%) */
+        width: 75%; /* CHỈ PHẦN BÊN PHẢI */
+        height: 55px; /* Dày hơn */
+        z-index: 50 !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .notification-banner {
+        left: 16.67%; /* SAU SIDEBAR (col-lg-2 = 16.67%) */
+        width: 83.33%; /* CHỈ PHẦN BÊN PHẢI */
+        height: 55px; /* Dày hơn */
+        z-index: 50 !important;
+    }
+}
+
+/* Mobile - full width dưới navbar */
+@media (max-width: 767px) {
+    .notification-banner {
+        top: 56px; /* SÁT NAVBAR */
+        left: 0;
+        width: 100%;
+        height: 60px; /* Dày hơn */
+        z-index: 50 !important;
+    }
+}
+
+/* Loại bỏ các class thay đổi màu sắc */
+.notification-banner-urgent,
+.notification-banner-critical {
+    background: linear-gradient(90deg, #fd7e14, #ffc107) !important; /* LUÔN MÀU CAM */
+    z-index: 1051 !important; /* Cùng mức với banner chính */
+}
+
+@keyframes bannerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.9; }
+}
+
+.notification-banner-content {
+    display: inline-block; /* THAY ĐỔI TỪ FLEX */
+    white-space: nowrap;
+    animation: scrollLeft 8s linear infinite;
+    width: max-content;
+    min-width: 100vw;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    line-height: 40px; /* LINE HEIGHT BẰNG CHIỀU CAO BANNER */
+    height: 40px; /* CHIỀU CAO CỐ ĐỊNH */
+}
+
+/* Loại bỏ các animation khác nhau */
+.notification-banner-urgent .notification-banner-content,
+.notification-banner-critical .notification-banner-content {
+    animation: scrollLeft 8s linear infinite; /* CÙNG TỐC ĐỘ */
+}
+
+@keyframes scrollLeft {
+    0% { 
+        transform: translateX(100vw);
+    }
+    100% { 
+        transform: translateX(-100%);
+    }
+}
+
+.notification-item {
+    display: inline-block; /* THAY ĐỔI TỪ INLINE-FLEX */
+    margin-right: 50px;
+    font-size: 14px; /* FONT SIZE VỪA PHẢI GIỐNG HÌNH */
+    font-weight: 600;
+    padding: 0 20px;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    line-height: 40px; /* LINE HEIGHT BẰNG CHIỀU CAO BANNER */
+    height: 40px; /* CHIỀU CAO CỐ ĐỊNH */
+    vertical-align: top; /* CĂN TRÊN CÙNG */
+    box-sizing: border-box;
+    position: relative;
+}
+
+.notification-item .icon {
+    margin-right: 8px;
+    font-size: 14px; /* KÍCH THƯỚC ICON VỪA PHẢI */
+    display: inline;
+    vertical-align: middle; /* CĂN GIỮA VỚI TEXT */
+}
+
+.notification-item .message {
+    white-space: nowrap;
+    display: inline;
+    font-size: 14px; /* FONT SIZE VỪA PHẢI GIỐNG HÌNH */
+    font-weight: 600;
+    vertical-align: middle; /* CĂN GIỮA VỚI ICON */
+}
+
+.notification-item.low-stock .icon {
+    animation: bounce 2s infinite;
+}
+
+.notification-item.expiry-warning .icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-3px); }
+    60% { transform: translateY(-2px); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Main content adjustment - Banner dày hơn */
+.main-content {
+    margin-top: 116px !important; /* 56px navbar + 60px banner dày */
+    padding-top: 0;
+    padding-bottom: 20px;
+}
+
+.main-content.with-banner {
+    margin-top: 116px !important; /* Cùng kích thước */
+    padding-bottom: 20px;
+}
+
+/* Notification Text Popup - Inline trong navbar */
+.notification-text-inline {
+    background: rgba(255, 193, 7, 0.95);
+    color: #000;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 400px; /* Tăng từ 200px lên 400px */
+    min-width: 250px; /* Đảm bảo có độ rộng tối thiểu */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 15px; /* Khoảng cách với chuông */
+}
+
+.notification-text-inline.notification-text-active {
+    animation: textPulse 3s infinite;
+    background: rgba(255, 193, 7, 0.95) !important;
+    color: #000 !important;
+}
+
+.notification-text-inline.notification-text-urgent {
+    background: rgba(255, 152, 0, 0.95) !important;
+    color: #fff !important;
+    animation: textPulse 2s infinite;
+}
+
+.notification-text-inline.notification-text-critical {
+    background: rgba(220, 53, 69, 0.95) !important;
+    color: white !important;
+    animation: textPulse 1s infinite;
+}
+
+@keyframes textPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    50% { 
+        transform: scale(1.02);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+}
+
+/* Notification Bell Animation */
+.notification-bell-active {
+    animation: bellRing 2s infinite;
+    color: #ffc107 !important;
+}
+
+.notification-bell-urgent {
+    animation: bellRing 1s infinite;
+    color: #dc3545 !important;
+}
+
+@keyframes bellRing {
+    0%, 50%, 100% { transform: rotate(0deg); }
+    10%, 30% { transform: rotate(-10deg); }
+    20%, 40% { transform: rotate(10deg); }
+}
+
+/* Notification Badge Animation */
+.notification-badge-active {
+    animation: badgePulse 2s infinite;
+}
+
+.notification-badge-urgent {
+    background-color: #dc3545 !important;
+    animation: badgePulse 1s infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Đảm bảo navbar và banner sát nhau hoàn toàn */
+.navbar {
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+    z-index: 1050 !important; /* Navbar cao nhất */
+}
+
+.navbar .dropdown-menu {
+    z-index: 1060 !important; /* Dropdown menu cao nhất */
+}
+
+/* Đảm bảo sidebar LUÔN hiển thị trên banner */
+.sidebar {
+    z-index: 100 !important; /* Cao hơn banner (z-index: 50) */
+    background-color: #f8f9fa !important; /* Đảm bảo có background che banner */
+}
+
+.container-fluid {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+body {
+    padding-top: 0 !important;
+}
+
+/* Loại bỏ tất cả khoảng cách không mong muốn */
+* {
+    box-sizing: border-box;
+}
+
+.navbar + .notification-banner {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Đảm bảo main content không bị che bởi banner fixed */
+.main-content {
+    padding-top: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .notification-banner {
+        left: 0;
+        width: 100%;
+        top: 56px; /* Sát navbar */
+        height: 40px;
+    }
+    
+    .notification-banner.show {
+        height: 40px;
+        font-size: 13px;
+    }
+    
+    .notification-text-inline {
+        max-width: 250px;
+        min-width: 200px;
+        font-size: 11px;
+        padding: 4px 8px;
+        margin-right: 10px;
+    }
+    
+    .main-content.with-banner {
+        margin-top: 96px; /* 56px navbar + 40px banner */
+        padding-bottom: 20px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 991px) {
+    .notification-banner {
+        left: 0; /* Tablet cũng full width */
+        width: 100%;
+    }
+}
+
+@media (min-width: 992px) {
+    .notification-banner {
+        left: 0; /* Desktop cũng full width */
+        width: 100%;
+    }
+}
+
+@media (max-width: 992px) {
+    .notification-text-inline {
+        max-width: 350px; /* Tăng từ 180px */
+        min-width: 220px;
+        margin-right: 12px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .notification-text-inline {
+        max-width: 500px; /* Rộng hơn trên màn hình lớn */
+        min-width: 300px;
     }
 }

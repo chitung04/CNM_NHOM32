@@ -32,8 +32,16 @@ class AuditLog {
     }
     
     /**
-     * Lấy tất cả logs
+     * Lấy log theo ID
      */
+    public function getById($id) {
+        $sql = "SELECT al.*, u.username, u.full_name
+                FROM audit_logs al
+                LEFT JOIN users u ON al.user_id = u.user_id
+                WHERE al.log_id = ?";
+        $stmt = $this->db->query($sql, [$id]);
+        return $stmt->fetch();
+    }
     public function getAll($limit = 100, $offset = 0) {
         $sql = "SELECT al.*, u.username, u.full_name
                 FROM audit_logs al
@@ -131,8 +139,16 @@ class AuditLog {
      * Xóa logs cũ (cleanup)
      */
     public function cleanup($days = 90) {
+        // First count how many will be deleted
+        $countSql = "SELECT COUNT(*) as total FROM audit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
+        $countStmt = $this->db->query($countSql, [$days]);
+        $count = $countStmt->fetch()['total'];
+        
+        // Then delete them
         $sql = "DELETE FROM audit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
-        return $this->db->execute($sql, [$days]);
+        $this->db->execute($sql, [$days]);
+        
+        return $count;
     }
     
     /**
@@ -156,5 +172,140 @@ class AuditLog {
         
         $stmt = $this->db->query($sql, $params);
         return $stmt->fetchAll();
+    }
+    
+    /**
+     * Lấy logs với filters
+     */
+    public function getFilteredLogs($filters, $limit, $offset) {
+        $sql = "SELECT al.*, u.username, u.full_name
+                FROM audit_logs al
+                LEFT JOIN users u ON al.user_id = u.user_id
+                WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filters['user_id'])) {
+            $sql .= " AND al.user_id = ?";
+            $params[] = $filters['user_id'];
+        }
+        
+        if (!empty($filters['action'])) {
+            $sql .= " AND al.action = ?";
+            $params[] = $filters['action'];
+        }
+        
+        if (!empty($filters['table_name'])) {
+            $sql .= " AND al.table_name = ?";
+            $params[] = $filters['table_name'];
+        }
+        
+        if (!empty($filters['start_date'])) {
+            $sql .= " AND DATE(al.created_at) >= ?";
+            $params[] = $filters['start_date'];
+        }
+        
+        if (!empty($filters['end_date'])) {
+            $sql .= " AND DATE(al.created_at) <= ?";
+            $params[] = $filters['end_date'];
+        }
+        
+        $sql .= " ORDER BY al.created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        
+        $stmt = $this->db->query($sql, $params);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Lấy danh sách actions duy nhất
+     */
+    public function getUniqueActions() {
+        $sql = "SELECT DISTINCT action FROM audit_logs ORDER BY action";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    
+    /**
+     * Lấy danh sách tables duy nhất
+     */
+    public function getUniqueTables() {
+        $sql = "SELECT DISTINCT table_name FROM audit_logs ORDER BY table_name";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    
+    /**
+     * Thống kê theo user
+     */
+    public function getUserStatistics($startDate, $endDate) {
+        $sql = "SELECT u.full_name, u.username, COUNT(*) as activity_count
+                FROM audit_logs al
+                LEFT JOIN users u ON al.user_id = u.user_id
+                WHERE DATE(al.created_at) BETWEEN ? AND ?
+                GROUP BY al.user_id, u.full_name, u.username
+                ORDER BY activity_count DESC
+                LIMIT 10";
+        
+        $stmt = $this->db->query($sql, [$startDate, $endDate]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Thống kê theo table
+     */
+    public function getTableStatistics($startDate, $endDate) {
+        $sql = "SELECT table_name, COUNT(*) as activity_count
+                FROM audit_logs
+                WHERE DATE(created_at) BETWEEN ? AND ?
+                GROUP BY table_name
+                ORDER BY activity_count DESC";
+        
+        $stmt = $this->db->query($sql, [$startDate, $endDate]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Thống kê theo ngày
+     */
+    public function getDailyStatistics($startDate, $endDate) {
+        $sql = "SELECT DATE(created_at) as date, COUNT(*) as activity_count
+                FROM audit_logs
+                WHERE DATE(created_at) BETWEEN ? AND ?
+                GROUP BY DATE(created_at)
+                ORDER BY date DESC";
+        
+        $stmt = $this->db->query($sql, [$startDate, $endDate]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Đếm logs hôm nay
+     */
+    public function getTodayCount() {
+        $sql = "SELECT COUNT(*) as count FROM audit_logs WHERE DATE(created_at) = CURDATE()";
+        $stmt = $this->db->query($sql);
+        $result = $stmt->fetch();
+        return $result['count'] ?? 0;
+    }
+    
+    /**
+     * Đếm logs tuần này
+     */
+    public function getWeekCount() {
+        $sql = "SELECT COUNT(*) as count FROM audit_logs WHERE YEARWEEK(created_at) = YEARWEEK(NOW())";
+        $stmt = $this->db->query($sql);
+        $result = $stmt->fetch();
+        return $result['count'] ?? 0;
+    }
+    
+    /**
+     * Đếm số người dùng hoạt động hôm nay
+     */
+    public function getActiveUsersCount() {
+        $sql = "SELECT COUNT(DISTINCT user_id) as count FROM audit_logs WHERE DATE(created_at) = CURDATE()";
+        $stmt = $this->db->query($sql);
+        $result = $stmt->fetch();
+        return $result['count'] ?? 0;
     }
 }

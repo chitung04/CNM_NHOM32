@@ -1,5 +1,5 @@
 <?php
-require_once 'helpers/auth.php';
+require_once 'helpers/secure_session.php';
 requireManager();
 
 $pageTitle = $pageTitle ?? 'Chi tiết lô thuốc';
@@ -76,12 +76,12 @@ require_once 'views/layouts/header.php';
                                     </tr>
                                     <tr>
                                         <th>Ngày nhập kho:</th>
-                                        <td><?= date('d/m/Y', strtotime($batch['import_date'])) ?></td>
+                                        <td><?= $batch['import_date'] ? date('d/m/Y', strtotime($batch['import_date'])) : '-' ?></td>
                                     </tr>
                                     <tr>
                                         <th>Hạn sử dụng:</th>
                                         <td>
-                                            <?= date('d/m/Y', strtotime($batch['expiry_date'])) ?>
+                                            <?= $batch['expiry_date'] ? date('d/m/Y', strtotime($batch['expiry_date'])) : '-' ?>
                                             <?php if ($batch['days_to_expiry'] <= 30 && $batch['days_to_expiry'] > 0): ?>
                                                 <span class="badge bg-warning text-dark ms-2">
                                                     <i class="bi bi-exclamation-triangle"></i> 
@@ -114,7 +114,7 @@ require_once 'views/layouts/header.php';
                                     </tr>
                                     <tr>
                                         <th>Ngày tạo:</th>
-                                        <td><?= date('d/m/Y H:i', strtotime($batch['created_at'])) ?></td>
+                                        <td><?= $batch['created_at'] ? date('d/m/Y H:i', strtotime($batch['created_at'])) : '-' ?></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -144,7 +144,7 @@ require_once 'views/layouts/header.php';
                                         <?php foreach ($salesHistory as $sale): ?>
                                         <tr>
                                             <td><strong><?= htmlspecialchars($sale['invoice_number']) ?></strong></td>
-                                            <td><?= date('d/m/Y H:i', strtotime($sale['created_at'])) ?></td>
+                                            <td><?= $sale['created_at'] ? date('d/m/Y H:i', strtotime($sale['created_at'])) : '-' ?></td>
                                             <td><?= $sale['quantity'] ?></td>
                                             <td><?= number_format($sale['unit_price'], 0, ',', '.') ?> VNĐ</td>
                                             <td><strong><?= number_format($sale['subtotal'], 0, ',', '.') ?> VNĐ</strong></td>
@@ -186,22 +186,107 @@ require_once 'views/layouts/header.php';
                     <!-- QR Code -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5 class="mb-0">Mã QR</h5>
+                            <h5 class="mb-0">
+                                <i class="bi bi-qr-code"></i> Mã QR - Thông tin thuốc
+                            </h5>
                         </div>
                         <div class="card-body text-center">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>QR Code thông tin thuốc:</strong> Quét bằng điện thoại để xem thông tin chi tiết về thuốc này từ nhà thuốc.
+                            </div>
                             <?php if ($batch['qr_code']): ?>
-                                <img src="assets/qrcodes/<?= $batch['qr_code'] ?>.png" 
-                                     alt="QR Code" 
-                                     class="img-fluid mb-3"
-                                     style="max-width: 200px;">
-                                <p class="text-muted small mb-0">
-                                    <code><?= $batch['qr_code'] ?></code>
-                                </p>
+                                <?php 
+                                $qrImagePath = "assets/qrcodes/{$batch['qr_code']}.png";
+                                if (file_exists($qrImagePath)): 
+                                ?>
+                                    <img src="<?php echo $qrImagePath; ?>" 
+                                         alt="QR Code" 
+                                         class="img-fluid mb-3"
+                                         style="max-width: 200px; border: 2px solid #dee2e6; border-radius: 10px;">
+                                    
+                                    <p class="text-muted small mb-2">
+                                        <code><?php echo $batch['qr_code']; ?></code>
+                                    </p>
+                                    
+                                    <?php 
+                                    require_once 'helpers/qrcode.php';
+                                    $qrUrl = generateMedicineQRData($batch['batch_id'], $batch['qr_code'], $batch['medicine_id']);
+                                    ?>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <?php 
+                                        // URL xem thông tin thuốc từ QR code
+                                        $medicineInfoUrl = BASE_URL . '/medicine_info.php?qr=' . urlencode($batch['qr_code']);
+                                        ?>
+                                        
+                                        <a href="<?php echo $medicineInfoUrl; ?>" 
+                                           class="btn btn-primary btn-sm" 
+                                           target="_blank">
+                                            <i class="bi bi-info-circle me-1"></i>Xem thông tin thuốc
+                                        </a>
+                                        
+                                        <a href="<?php echo $qrUrl; ?>" 
+                                           class="btn btn-success btn-sm" 
+                                           target="_blank">
+                                            <i class="bi bi-google me-1"></i>Tìm kiếm Google
+                                        </a>
+                                        
+                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                onclick="copyToClipboard('<?php echo $medicineInfoUrl; ?>')">
+                                            <i class="bi bi-clipboard me-1"></i>Copy link thuốc
+                                        </button>
+                                    </div>
+                                    
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-phone"></i> Quét bằng điện thoại để xem thông tin thuốc chi tiết
+                                    </small>
+                                <?php else: ?>
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        QR Code chưa được tạo hoặc bị lỗi
+                                    </div>
+                                    
+                                    <form method="POST" action="tools/regenerate_single_qr.php">
+                                        <input type="hidden" name="batch_id" value="<?php echo $batch['batch_id']; ?>">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i> Tạo lại QR Code
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                             <?php else: ?>
-                                <p class="text-muted">Chưa có mã QR</p>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    Lô thuốc này chưa có mã QR
+                                </div>
+                                
+                                <form method="POST" action="tools/generate_qr_for_batch.php">
+                                    <input type="hidden" name="batch_id" value="<?php echo $batch['batch_id']; ?>">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-plus-circle"></i> Tạo QR Code
+                                    </button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Đã copy link vào clipboard!');
+    }, function(err) {
+        console.error('Không thể copy: ', err);
+        // Fallback cho trình duyệt cũ
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Đã copy link vào clipboard!');
+    });
+}
+</script>
 
                     <!-- Thống kê -->
                     <div class="card">

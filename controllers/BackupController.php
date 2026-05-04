@@ -36,29 +36,14 @@ class BackupController {
             $filename = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
             $filepath = $this->backupDir . $filename;
             
-            // Lấy thông tin database từ config
-            $host = DB_HOST;
-            $user = DB_USER;
-            $pass = DB_PASS;
-            $name = DB_NAME;
+            // Tạo backup bằng PHP thuần (không cần mysqldump)
+            $backupContent = $this->createBackupContent();
             
-            // Tạo backup bằng mysqldump
-            $command = sprintf(
-                'mysqldump --host=%s --user=%s --password=%s %s > %s 2>&1',
-                escapeshellarg($host),
-                escapeshellarg($user),
-                escapeshellarg($pass),
-                escapeshellarg($name),
-                escapeshellarg($filepath)
-            );
-            
-            exec($command, $output, $returnVar);
-            
-            if ($returnVar === 0 && file_exists($filepath)) {
+            if (file_put_contents($filepath, $backupContent)) {
                 logAction('BACKUP_CREATE', "Created backup: $filename");
                 $_SESSION['success'] = "Sao lưu dữ liệu thành công: $filename";
             } else {
-                throw new Exception("Lỗi khi tạo backup: " . implode("\n", $output));
+                throw new Exception("Không thể ghi file backup");
             }
             
         } catch (Exception $e) {
@@ -207,5 +192,70 @@ class BackupController {
         }
         
         return $files;
+    }
+    
+    /**
+     * Tạo nội dung backup bằng PHP
+     */
+    private function createBackupContent() {
+        try {
+            // Kết nối database
+            $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            $backup = "-- ============================================\n";
+            $backup .= "-- DUO PHARMA - Database Backup\n";
+            $backup .= "-- Created: " . date('Y-m-d H:i:s') . "\n";
+            $backup .= "-- Database: " . DB_NAME . "\n";
+            $backup .= "-- ============================================\n\n";
+            
+            $backup .= "SET FOREIGN_KEY_CHECKS = 0;\n";
+            $backup .= "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+            $backup .= "SET AUTOCOMMIT = 0;\n";
+            $backup .= "START TRANSACTION;\n\n";
+            
+            // Lấy danh sách bảng
+            $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+            
+            foreach ($tables as $table) {
+                $backup .= "-- ============================================\n";
+                $backup .= "-- Table: $table\n";
+                $backup .= "-- ============================================\n\n";
+                
+                // Lấy cấu trúc bảng
+                $createTable = $pdo->query("SHOW CREATE TABLE `$table`")->fetch();
+                $backup .= "DROP TABLE IF EXISTS `$table`;\n";
+                $backup .= $createTable['Create Table'] . ";\n\n";
+                
+                // Lấy dữ liệu
+                $rows = $pdo->query("SELECT * FROM `$table`")->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (!empty($rows)) {
+                    $backup .= "-- Dữ liệu cho bảng `$table`\n";
+                    
+                    foreach ($rows as $row) {
+                        $columns = array_keys($row);
+                        $values = array_values($row);
+                        
+                        // Escape values
+                        $escapedValues = array_map(function($value) use ($pdo) {
+                            return $value === null ? 'NULL' : $pdo->quote($value);
+                        }, $values);
+                        
+                        $backup .= "INSERT INTO `$table` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $escapedValues) . ");\n";
+                    }
+                    $backup .= "\n";
+                }
+            }
+            
+            $backup .= "COMMIT;\n";
+            $backup .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+            $backup .= "\n-- Backup completed: " . date('Y-m-d H:i:s') . "\n";
+            
+            return $backup;
+            
+        } catch (Exception $e) {
+            throw new Exception("Lỗi khi tạo backup: " . $e->getMessage());
+        }
     }
 }

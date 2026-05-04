@@ -3,7 +3,9 @@
  * Helper functions cho Audit Log
  */
 
-require_once 'models/AuditLog.php';
+// Sử dụng đường dẫn tuyệt đối để tránh lỗi
+$basePath = dirname(__DIR__);
+require_once $basePath . '/models/AuditLog.php';
 
 /**
  * Ghi audit log
@@ -73,13 +75,36 @@ function auditExport($tableName, $format, $recordCount) {
 }
 
 /**
- * Log IMPORT action
+ * Log CANCEL ORDER action
  */
-function auditImport($tableName, $recordCount, $successCount, $errorCount) {
-    return auditLog('IMPORT', $tableName, null, null, [
-        'total' => $recordCount,
-        'success' => $successCount,
-        'errors' => $errorCount
+function auditCancelOrder($invoiceId, $invoiceData) {
+    return auditLog('CANCEL_ORDER', 'invoices', $invoiceId, null, $invoiceData);
+}
+
+/**
+ * Log PAYMENT action
+ */
+function auditPayment($invoiceId, $paymentData) {
+    return auditLog('PAYMENT', 'invoices', $invoiceId, null, $paymentData);
+}
+
+/**
+ * Log INVENTORY UPDATE action
+ */
+function auditInventoryUpdate($batchId, $oldQuantity, $newQuantity, $reason) {
+    return auditLog('INVENTORY_UPDATE', 'batches', $batchId, 
+        ['quantity' => $oldQuantity], 
+        ['quantity' => $newQuantity, 'reason' => $reason]
+    );
+}
+
+/**
+ * Log SYSTEM MAINTENANCE action
+ */
+function auditMaintenance($action, $details) {
+    return auditLog('MAINTENANCE', 'system', null, null, [
+        'action' => $action,
+        'details' => $details
     ]);
 }
 
@@ -98,7 +123,12 @@ function getActionName($action) {
         'EXPORT' => 'Xuất dữ liệu',
         'IMPORT' => 'Nhập dữ liệu',
         'BACKUP' => 'Sao lưu',
-        'RESTORE' => 'Khôi phục'
+        'RESTORE' => 'Khôi phục',
+        'CANCEL_ORDER' => 'Hủy đơn hàng',
+        'PAYMENT' => 'Thanh toán',
+        'INVENTORY_UPDATE' => 'Cập nhật tồn kho',
+        'MAINTENANCE' => 'Bảo trì hệ thống',
+        'CLEANUP' => 'Dọn dẹp dữ liệu'
     ];
     
     return $actions[$action] ?? $action;
@@ -114,10 +144,14 @@ function getTableName($table) {
         'batches' => 'Lô thuốc',
         'suppliers' => 'Nhà cung cấp',
         'invoices' => 'Hóa đơn',
+        'invoice_details' => 'Chi tiết hóa đơn',
         'customers' => 'Khách hàng',
         'promotions' => 'Khuyến mãi',
         'categories' => 'Danh mục',
-        'units' => 'Đơn vị'
+        'units' => 'Đơn vị',
+        'notifications' => 'Thông báo',
+        'audit_logs' => 'Nhật ký hệ thống',
+        'system' => 'Hệ thống'
     ];
     
     return $tables[$table] ?? $table;

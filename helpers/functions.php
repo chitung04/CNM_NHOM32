@@ -14,7 +14,7 @@ function formatCurrency($amount) {
  * Format ngày tháng
  */
 function formatDate($date, $format = 'd/m/Y') {
-    if (empty($date)) {
+    if (empty($date) || $date === null) {
         return '';
     }
     return date($format, strtotime($date));
@@ -24,7 +24,7 @@ function formatDate($date, $format = 'd/m/Y') {
  * Format ngày giờ
  */
 function formatDateTime($datetime, $format = 'd/m/Y H:i') {
-    if (empty($datetime)) {
+    if (empty($datetime) || $datetime === null) {
         return '';
     }
     return date($format, strtotime($datetime));
@@ -44,6 +44,9 @@ function daysBetween($date1, $date2) {
  * Kiểm tra ngày đã quá hạn chưa
  */
 function isExpired($date) {
+    if (empty($date) || $date === null) {
+        return false;
+    }
     return strtotime($date) < time();
 }
 

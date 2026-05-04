@@ -5,7 +5,7 @@ session_start();
 $basePath = dirname(__DIR__);
 require_once $basePath . '/config/config.php';
 require_once $basePath . '/config/database.php';
-require_once $basePath . '/helpers/auth.php';
+require_once $basePath . '/helpers/secure_session.php';
 require_once $basePath . '/models/Medicine.php';
 require_once $basePath . '/models/Batch.php';
 require_once $basePath . '/models/Invoice.php';
@@ -102,8 +102,8 @@ try {
         require_once $basePath . '/helpers/qrcode.php';
         $qrCode = generateUniqueQRCode('INV');
         
-        $sql = "INSERT INTO invoices (invoice_number, user_id, total_amount, discount, final_amount, qr_code) 
-                VALUES (?, ?, 0, 0, 0, ?)";
+        $sql = "INSERT INTO invoices (invoice_number, user_id, total_amount, discount, final_amount, qr_code, payment_method) 
+                VALUES (?, ?, 0, 0, 0, ?, NULL)";
         $db->execute($sql, [$invoiceNumber, $userId, $qrCode]);
         $invoiceId = $db->lastInsertId();
         

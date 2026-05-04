@@ -16,9 +16,22 @@ function loadEnv($path = '.env') {
         }
         
         // Parse key=value
-        list($key, $value) = explode('=', $line, 2);
-        $key = trim($key);
-        $value = trim($value);
+        if (strpos($line, '=') === false) {
+            continue; // Bỏ qua dòng không có dấu =
+        }
+        
+        $parts = explode('=', $line, 2);
+        if (count($parts) < 2) {
+            continue; // Bỏ qua nếu không đủ 2 phần
+        }
+        
+        $key = trim($parts[0]);
+        $value = isset($parts[1]) ? trim($parts[1]) : '';
+        
+        // Bỏ qua nếu key rỗng hoặc chỉ có khoảng trắng
+        if (empty($key) || ctype_space($key)) {
+            continue;
+        }
         
         // Set vào $_ENV và putenv
         $_ENV[$key] = $value;

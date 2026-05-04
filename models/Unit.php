@@ -9,14 +9,20 @@ class Unit {
     }
     
     public function getAll() {
-        $sql = "SELECT * FROM units ORDER BY unit_name ASC";
-        $stmt = $this->db->query($sql);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM units WHERE pharmacy_id = ? ORDER BY unit_name ASC";
+        $stmt = $this->db->query($sql, [$pharmacyId]);
         return $stmt->fetchAll();
     }
     
     public function getById($id) {
-        $sql = "SELECT * FROM units WHERE unit_id = ?";
-        $stmt = $this->db->query($sql, [$id]);
+        require_once 'helpers/pharmacy.php';
+        $pharmacyId = requirePharmacyId();
+        
+        $sql = "SELECT * FROM units WHERE unit_id = ? AND pharmacy_id = ?";
+        $stmt = $this->db->query($sql, [$id, $pharmacyId]);
         return $stmt->fetch();
     }
 }
